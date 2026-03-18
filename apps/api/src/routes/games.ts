@@ -346,8 +346,9 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
   let setlist: string[];
   try {
     setlist = await fetchSetlistByDate(showDate);
-  } catch {
+  } catch (err) {
     // Fallback: derive setlist from correct picks if Phish.net is unavailable
+    console.warn(`Failed to fetch setlist for ${showDate}, falling back to scored picks:`, err);
     const setlistSongs = new Set<string>();
     for (const pick of game.picks) {
       if (pick.scored === true) {
