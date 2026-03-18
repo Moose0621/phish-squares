@@ -7,4 +7,7 @@ module.exports = {
   moduleNameMapper: {
     '^@phish-squares/shared$': '<rootDir>/../../packages/shared/src',
   },
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', { diagnostics: false }],
+  },
 };

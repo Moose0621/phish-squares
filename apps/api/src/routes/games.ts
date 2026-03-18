@@ -4,11 +4,15 @@ import {
   joinGameSchema,
   GameStatus,
   MIN_PLAYERS,
+  BONUS_ROUND_MULTIPLIER,
+  GameResult,
+  PlayerResult,
 } from '@phish-squares/shared';
-import { generateInviteCode, generateDraftOrder } from '@phish-squares/shared';
+import { generateInviteCode, generateDraftOrder, calculatePickScore } from '@phish-squares/shared';
 import { prisma } from '../db';
 import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
+import { scoreGame } from '../services/scoring';
 
 const router = Router();
 
@@ -204,6 +208,41 @@ router.post('/:id/start', async (req: Request, res: Response): Promise<void> => 
   res.json(updatedGame);
 });
 
+// Score a game (host only, or any player if game is past show date)
+router.post('/:id/score', async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const userId = req.user!.userId;
+
+  const game = await prisma.game.findUnique({
+    where: { id },
+    include: { players: true },
+  });
+
+  if (!game) {
+    res.status(404).json({ error: 'Game not found' });
+    return;
+  }
+
+  const isPlayer = game.players.some((p) => p.userId === userId);
+  if (!isPlayer) {
+    res.status(403).json({ error: 'You are not a player in this game' });
+    return;
+  }
+
+  if (game.status !== 'LOCKED') {
+    res.status(400).json({ error: 'Game must be in LOCKED status to score' });
+    return;
+  }
+
+  try {
+    await scoreGame(id);
+    res.json({ message: 'Game scored successfully' });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to score game';
+    res.status(500).json({ error: message });
+  }
+});
+
 // Get game results
 router.get('/:id/results', async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
@@ -233,7 +272,65 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
     return;
   }
 
-  res.json(game);
+  // Build aggregated player results
+  const playerScores = new Map<string, { picks: typeof game.picks; totalPoints: number }>();
+
+  for (const player of game.players) {
+    playerScores.set(player.userId, { picks: [], totalPoints: 0 });
+  }
+
+  for (const pick of game.picks) {
+    const entry = playerScores.get(pick.userId);
+    if (entry) {
+      entry.picks.push(pick);
+      if (pick.scored === true) {
+        entry.totalPoints += calculatePickScore(pick.isBonus, true, BONUS_ROUND_MULTIPLIER);
+      }
+    }
+  }
+
+  // Build sorted player results
+  const playerResults: PlayerResult[] = game.players
+    .map((player) => {
+      const scores = playerScores.get(player.userId)!;
+      return {
+        userId: player.userId,
+        username: player.user?.username ?? '',
+        picks: scores.picks.map((p) => ({ ...p, scored: p.scored ?? false })),
+        totalPoints: scores.totalPoints,
+        rank: 0, // will be filled in below
+      };
+    })
+    .sort((a, b) => b.totalPoints - a.totalPoints);
+
+  // Assign ranks (handle ties)
+  for (let i = 0; i < playerResults.length; i++) {
+    if (i === 0 || playerResults[i].totalPoints < playerResults[i - 1].totalPoints) {
+      playerResults[i].rank = i + 1;
+    } else {
+      playerResults[i].rank = playerResults[i - 1].rank;
+    }
+  }
+
+  const showDate = game.showDate.toISOString().split('T')[0];
+
+  // Build setlist from correct picks (unique songs that were scored true)
+  const setlistSongs = new Set<string>();
+  for (const pick of game.picks) {
+    if (pick.scored === true) {
+      setlistSongs.add(pick.songName);
+    }
+  }
+
+  const result: GameResult = {
+    gameId: game.id,
+    showDate,
+    showVenue: game.showVenue,
+    setlist: [...setlistSongs],
+    playerResults,
+  };
+
+  res.json(result);
 });
 
 export default router;
