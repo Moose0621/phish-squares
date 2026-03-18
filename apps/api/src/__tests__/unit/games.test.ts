@@ -499,32 +499,6 @@ describe('GET /api/games/:id/results', () => {
     expect(res.body.playerResults[1].rank).toBe(1); // Same rank for tie
   });
 
-  it('should fall back to correct-picks setlist if Phish.net fetch fails', async () => {
-    (mockPrisma.game.findUnique as jest.Mock).mockResolvedValue({
-      id: 'game-1',
-      status: 'SCORED',
-      showDate: new Date('2025-08-15'),
-      showVenue: 'MSG',
-      players: [
-        { userId: 'user-1', user: { id: 'user-1', username: 'player1' } },
-      ],
-      picks: [
-        { id: 'p1', gameId: 'game-1', userId: 'user-1', songName: 'Tweezer', round: 1, pickOrder: 0, isBonus: false, scored: true, createdAt: new Date() },
-        { id: 'p2', gameId: 'game-1', userId: 'user-1', songName: 'Wrong Song', round: 2, pickOrder: 0, isBonus: false, scored: false, createdAt: new Date() },
-      ],
-    });
-    mockFetchSetlistByDate.mockRejectedValue(new Error('Phish.net API error: 503 Service Unavailable'));
-
-    const app = createApp();
-    const res = await request(app)
-      .get('/api/games/game-1/results')
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(res.status).toBe(200);
-    // Falls back to correct picks only
-    expect(res.body.setlist).toEqual(['Tweezer']);
-  });
-
   it('should return 400 if game is not scored', async () => {
     (mockPrisma.game.findUnique as jest.Mock).mockResolvedValue({
       id: 'game-1',

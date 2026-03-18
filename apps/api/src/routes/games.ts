@@ -343,20 +343,7 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
   const showDate = game.showDate.toISOString().split('T')[0];
 
   // Fetch the real setlist from Phish.net for accurate song list and ordering
-  let setlist: string[];
-  try {
-    setlist = await fetchSetlistByDate(showDate);
-  } catch (err) {
-    // Fallback: derive setlist from correct picks if Phish.net is unavailable
-    console.warn(`Failed to fetch setlist for ${showDate}, falling back to scored picks:`, err);
-    const setlistSongs = new Set<string>();
-    for (const pick of game.picks) {
-      if (pick.scored === true) {
-        setlistSongs.add(pick.songName);
-      }
-    }
-    setlist = [...setlistSongs];
-  }
+  const setlist = await fetchSetlistByDate(showDate);
 
   const result: GameResult = {
     gameId: game.id,
