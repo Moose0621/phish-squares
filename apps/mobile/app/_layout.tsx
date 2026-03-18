@@ -16,18 +16,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="game/[id]/lobby"
-          options={{ title: 'Game Lobby' }}
-        />
-        <Stack.Screen
-          name="game/[id]/draft"
-          options={{ title: 'Live Draft', headerBackVisible: false }}
-        />
-        <Stack.Screen
-          name="game/[id]/results"
-          options={{ title: 'Results' }}
-        />
+        <Stack.Screen name="game/[id]" options={{ headerShown: false }} />
       </Stack>
     </AuthProvider>
   );

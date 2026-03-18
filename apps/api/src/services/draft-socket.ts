@@ -13,8 +13,140 @@ import { AuthPayload } from '../middleware/auth';
 // Track timers per game
 const gameTimers = new Map<string, NodeJS.Timeout>();
 
+// Module-level reference so games.ts can emit to lobby rooms
+let _draftNamespace: ReturnType<Server['of']> | null = null;
+
+/**
+ * Emit an event to all sockets in a game room.
+ * Used by the games router to push lobby-update events.
+ */
+export function emitToGameRoom(gameId: string, event: string, data: unknown): void {
+  _draftNamespace?.to(gameId).emit(event, data);
+}
+
+interface PickEntry {
+  id: string;
+  gameId: string;
+  userId: string;
+  songName: string;
+  round: number;
+  pickOrder: number;
+  isBonus: boolean;
+  scored: boolean | null;
+  createdAt: Date;
+}
+
+interface PlayerEntry {
+  userId: string;
+  user: { id: string; username: string };
+}
+
+interface GameForPick {
+  id: string;
+  draftOrder: string[];
+  totalRounds: number;
+  picks: PickEntry[];
+  players: PlayerEntry[];
+}
+
+/**
+ * Shared pick-creation logic used by both MAKE_PICK and auto-pick.
+ * Creates the pick, broadcasts events, checks completion, and advances state.
+ */
+async function executePick(
+  draftNamespace: ReturnType<Server['of']>,
+  gameId: string,
+  pickerUserId: string,
+  pickerUsername: string,
+  songName: string,
+  game: GameForPick,
+): Promise<void> {
+  const nextPick = getNextPick(game.draftOrder, game.picks.length, game.totalRounds);
+
+  // Create the pick record
+  const pick = await prisma.pick.create({
+    data: {
+      gameId,
+      userId: pickerUserId,
+      songName,
+      round: nextPick.round,
+      pickOrder: game.picks.length,
+      isBonus: nextPick.isBonus,
+    },
+  });
+
+  // Clear existing timer
+  clearPickTimer(gameId);
+
+  // Broadcast the pick
+  draftNamespace.to(gameId).emit(SocketEvent.PICK_MADE, {
+    pick,
+    userId: pickerUserId,
+    username: pickerUsername,
+  });
+
+  const totalPicksNow = game.picks.length + 1;
+
+  // Check if draft is complete
+  if (isDraftComplete(totalPicksNow, game.draftOrder, game.totalRounds)) {
+    await prisma.game.update({
+      where: { id: gameId },
+      data: { status: 'LOCKED' },
+    });
+    draftNamespace.to(gameId).emit(SocketEvent.DRAFT_COMPLETE, { gameId });
+    return;
+  }
+
+  // Check round transition
+  const newNextPick = getNextPick(game.draftOrder, totalPicksNow, game.totalRounds);
+  if (newNextPick.round !== nextPick.round) {
+    draftNamespace.to(gameId).emit(SocketEvent.ROUND_COMPLETE, {
+      completedRound: nextPick.round,
+      nextRound: newNextPick.round,
+    });
+  }
+
+  // Update game state
+  await prisma.game.update({
+    where: { id: gameId },
+    data: {
+      currentRound: newNextPick.round,
+      currentPickIndex: newNextPick.pickIndexInRound,
+    },
+  });
+
+  // Send updated draft state
+  const updatedGame = await prisma.game.findUnique({
+    where: { id: gameId },
+    include: {
+      picks: { orderBy: [{ round: 'asc' }, { pickOrder: 'asc' }] },
+      players: { include: { user: { select: { id: true, username: true } } } },
+    },
+  });
+
+  if (updatedGame) {
+    draftNamespace.to(gameId).emit(SocketEvent.DRAFT_STATE, {
+      gameId: updatedGame.id,
+      status: updatedGame.status,
+      draftOrder: updatedGame.draftOrder,
+      currentRound: newNextPick.round,
+      currentPickIndex: newNextPick.pickIndexInRound,
+      totalRounds: updatedGame.totalRounds,
+      currentPickerUserId: newNextPick.userId,
+      isEndCap: false,
+      picks: updatedGame.picks,
+      players: updatedGame.players,
+      timerSeconds: PICK_TIMER_SECONDS,
+    });
+  }
+
+  // Start next pick timer
+  startPickTimer(draftNamespace, gameId, game.totalRounds);
+}
+
 export function setupDraftSocket(io: Server): void {
   const draftNamespace = io.of('/draft');
+  _draftNamespace = draftNamespace;
 
   // Authenticate socket connections
   draftNamespace.use((socket, next) => {
@@ -63,6 +195,11 @@ export function setupDraftSocket(io: Server): void {
           userId: user.userId,
           username: user.username,
         });
+
+        // Notify all lobby members of the updated player list
+        if (game.status === 'LOBBY') {
+          draftNamespace.to(gameId).emit('lobby-update', game);
+        }
 
         // Send current draft state
         const nextPick = getNextPick(game.draftOrder, game.picks.length, game.totalRounds);
@@ -127,86 +264,7 @@ export function setupDraftSocket(io: Server): void {
           return;
         }
 
-        // Create the pick
-        const pick = await prisma.pick.create({
-          data: {
-            gameId: data.gameId,
-            userId: user.userId,
-            songName: parsed.data.songName,
-            round: nextPick.round,
-            pickOrder: game.picks.length,
-            isBonus: nextPick.isBonus,
-          },
-        });
-
-        // Clear existing timer
-        clearPickTimer(data.gameId);
-
-        // Broadcast the pick
-        draftNamespace.to(data.gameId).emit(SocketEvent.PICK_MADE, {
-          pick,
-          userId: user.userId,
-          username: user.username,
-        });
-
-        // Check if draft is complete
-        const totalPicksNow = game.picks.length + 1;
-        if (isDraftComplete(totalPicksNow, game.draftOrder, game.totalRounds)) {
-          await prisma.game.update({
-            where: { id: data.gameId },
-            data: { status: 'LOCKED' },
-          });
-          draftNamespace.to(data.gameId).emit(SocketEvent.DRAFT_COMPLETE, {
-            gameId: data.gameId,
-          });
-          return;
-        }
-
-        // Check round transition
-        const newNextPick = getNextPick(game.draftOrder, totalPicksNow, game.totalRounds);
-        if (newNextPick.round !== nextPick.round) {
-          draftNamespace.to(data.gameId).emit(SocketEvent.ROUND_COMPLETE, {
-            completedRound: nextPick.round,
-            nextRound: newNextPick.round,
-          });
-        }
-
-        // Update game state
-        await prisma.game.update({
-          where: { id: data.gameId },
-          data: {
-            currentRound: newNextPick.round,
-            currentPickIndex: newNextPick.pickIndexInRound,
-          },
-        });
-
-        // Send updated draft state
-        const updatedGame = await prisma.game.findUnique({
-          where: { id: data.gameId },
-          include: {
-            picks: { orderBy: [{ round: 'asc' }, { pickOrder: 'asc' }] },
-            players: { include: { user: { select: { id: true, username: true } } } },
-          },
-        });
-
-        if (updatedGame) {
-          draftNamespace.to(data.gameId).emit(SocketEvent.DRAFT_STATE, {
-            gameId: updatedGame.id,
-            status: updatedGame.status,
-            draftOrder: updatedGame.draftOrder,
-            currentRound: newNextPick.round,
-            currentPickIndex: newNextPick.pickIndexInRound,
-            totalRounds: updatedGame.totalRounds,
-            currentPickerUserId: newNextPick.userId,
-            isEndCap: false,
-            picks: updatedGame.picks,
-            players: updatedGame.players,
-            timerSeconds: PICK_TIMER_SECONDS,
-          });
-        }
-
-        // Start new timer
-        startPickTimer(draftNamespace, data.gameId, game.totalRounds);
+        await executePick(draftNamespace, data.gameId, user.userId, user.username, parsed.data.songName, game);
       } catch {
         socket.emit(SocketEvent.ERROR, 'Failed to make pick');
       }
@@ -239,15 +297,57 @@ function startPickTimer(draftNamespace: ReturnType<Server['of']>, gameId: string
 
   let remaining = PICK_TIMER_SECONDS;
 
-  const timer = setInterval(async () => {
+  const timer = setInterval(() => {
     remaining--;
     draftNamespace.to(gameId).emit(SocketEvent.TIMER_TICK, { seconds: remaining });
 
     if (remaining <= 0) {
       clearPickTimer(gameId);
       draftNamespace.to(gameId).emit(SocketEvent.AUTO_PICK, { gameId });
-      // Auto-pick logic: skip turn (no pick made, move to next)
-      // In production, you might want to auto-select a random available song
+
+      // Auto-pick: select a random available song and create the pick
+      void (async () => {
+        try {
+          const game = await prisma.game.findUnique({
+            where: { id: gameId },
+            include: {
+              picks: { orderBy: [{ round: 'asc' }, { pickOrder: 'asc' }] },
+              players: { include: { user: { select: { id: true, username: true } } } },
+            },
+          });
+
+          if (!game || game.status !== 'DRAFTING') return;
+
+          const nextPick = getNextPick(game.draftOrder, game.picks.length, game.totalRounds);
+          if (nextPick.isDraftComplete) return;
+
+          // Find available songs (case-insensitive exclusion of already-picked songs)
+          const pickedNamesLower = new Set(game.picks.map((p) => p.songName.toLowerCase().trim()));
+          const allSongs = await prisma.song.findMany({ select: { name: true } });
+          const available = allSongs.filter((s) => !pickedNamesLower.has(s.name.toLowerCase().trim()));
+
+          if (available.length === 0) {
+            console.warn(`Auto-pick skipped for game ${gameId}: no songs available`);
+            return;
+          }
+
+          const randomIndex = Math.floor(Math.random() * available.length);
+          const song = available[randomIndex];
+          if (!song) return;
+
+          const picker = game.players.find((p) => p.userId === nextPick.userId);
+          await executePick(
+            draftNamespace,
+            gameId,
+            nextPick.userId,
+            picker?.user.username ?? 'Unknown',
+            song.name,
+            game,
+          );
+        } catch (err) {
+          console.error(`Auto-pick failed for game ${gameId}:`, err);
+        }
+      })();
     }
   }, 1000);
 

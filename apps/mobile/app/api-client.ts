@@ -63,6 +63,10 @@ class ApiClient {
     return this.request(`/api/games/${encodeURIComponent(id)}/results`);
   }
 
+  async getGameSetlist(id: string) {
+    return this.request(`/api/games/${encodeURIComponent(id)}/setlist`);
+  }
+
   // Songs
   async searchSongs(query: string) {
     return this.request(`/api/songs/search?q=${encodeURIComponent(query)}`);

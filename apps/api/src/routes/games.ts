@@ -8,6 +8,9 @@ import { generateInviteCode, generateDraftOrder } from '@phish-squares/shared';
 import { prisma } from '../db';
 import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
+import { scoreGame } from '../services/scoring';
+import { fetchSetlistByDate } from '../services/phishnet';
+import { emitToGameRoom } from '../services/draft-socket';
 
 const router = Router();
 
@@ -144,6 +147,9 @@ router.post('/join', validate(joinGameSchema), async (req: Request, res: Respons
   });
 
   res.json(updatedGame);
+
+  // Notify WebSocket clients in the lobby
+  emitToGameRoom(game.id, 'lobby-update', updatedGame);
 });
 
 // Start the draft (host only)
@@ -201,6 +207,57 @@ router.post('/:id/start', async (req: Request, res: Response): Promise<void> => 
   }
 
   res.json(updatedGame);
+
+  // Notify lobby WebSocket clients that the draft has started
+  emitToGameRoom(id, 'lobby-update', updatedGame);
+});
+
+// Score a game (host only, game must be LOCKED)
+router.post('/:id/score', async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const userId = req.user!.userId;
+
+  const game = await prisma.game.findUnique({ where: { id } });
+
+  if (!game) {
+    res.status(404).json({ error: 'Game not found' });
+    return;
+  }
+
+  if (game.hostUserId !== userId && !req.user!.isAdmin) {
+    res.status(403).json({ error: 'Only the host can score the game' });
+    return;
+  }
+
+  if (game.status !== 'LOCKED') {
+    res.status(400).json({ error: 'Game must be LOCKED to score' });
+    return;
+  }
+
+  try {
+    await scoreGame(id);
+    const scored = await prisma.game.findUnique({
+      where: { id },
+      include: {
+        players: { include: { user: { select: { id: true, username: true } } } },
+        picks: { orderBy: [{ round: 'asc' }, { pickOrder: 'asc' }] },
+      },
+    });
+    res.json(scored);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('No setlist found')) {
+        res.status(422).json({ error: error.message });
+        return;
+      }
+      if (error.message.toLowerCase().includes('rate limit')) {
+        res.status(502).json({ error: 'Phish.net rate limit exceeded, try again later' });
+        return;
+      }
+    }
+    console.error('Scoring error:', error);
+    res.status(500).json({ error: 'Failed to score game' });
+  }
 });
 
 // Get game results
@@ -233,6 +290,43 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
   }
 
   res.json(game);
+});
+
+// Get the setlist for a game's show date
+router.get('/:id/setlist', async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const userId = req.user!.userId;
+
+  const game = await prisma.game.findUnique({
+    where: { id },
+    include: {
+      players: { select: { userId: true } },
+    },
+  });
+
+  if (!game) {
+    res.status(404).json({ error: 'Game not found' });
+    return;
+  }
+
+  const isPlayer = game.players.some((p) => p.userId === userId);
+  if (!isPlayer && !req.user!.isAdmin) {
+    res.status(403).json({ error: 'You are not a player in this game' });
+    return;
+  }
+
+  const showDate = game.showDate.toISOString().split('T')[0];
+
+  try {
+    const setlist = await fetchSetlistByDate(showDate);
+    res.json({ setlist });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('No setlist')) {
+      res.status(404).json({ error: 'Setlist not available yet for this show' });
+      return;
+    }
+    res.status(503).json({ error: 'Could not fetch setlist from Phish.net' });
+  }
 });
 
 export default router;

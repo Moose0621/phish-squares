@@ -4,6 +4,7 @@ import {
   Text,
   FlatList,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { apiClient } from '../../api-client';
@@ -39,9 +40,11 @@ export default function ResultsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [game, setGame] = useState<GameResult | null>(null);
   const [standings, setStandings] = useState<PlayerScore[]>([]);
+  const [setlist, setSetlist] = useState<string[]>([]);
 
   useEffect(() => {
     loadResults();
+    loadSetlist();
   }, []);
 
   const loadResults = async () => {
@@ -79,6 +82,15 @@ export default function ResultsScreen() {
     }
   };
 
+  const loadSetlist = async () => {
+    try {
+      const data = (await apiClient.getGameSetlist(id)) as { setlist: string[] };
+      setSetlist(data.setlist);
+    } catch {
+      // Setlist may not be available yet
+    }
+  };
+
   if (!game) {
     return (
       <View style={styles.container}>
@@ -88,17 +100,36 @@ export default function ResultsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.venue}>{game.showVenue}</Text>
         <Text style={styles.date}>{game.showDate.split('T')[0]}</Text>
       </View>
+
+      {/* Setlist */}
+      {setlist.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>Setlist</Text>
+          <FlatList
+            data={setlist}
+            keyExtractor={(item, index) => `setlist-${index}`}
+            scrollEnabled={false}
+            renderItem={({ item, index }) => (
+              <View style={styles.setlistRow}>
+                <Text style={styles.setlistNumber}>{index + 1}</Text>
+                <Text style={styles.setlistSong}>{item}</Text>
+              </View>
+            )}
+          />
+        </>
+      )}
 
       {/* Leaderboard */}
       <Text style={styles.sectionTitle}>Standings</Text>
       <FlatList
         data={standings}
         keyExtractor={(item) => item.userId}
+        scrollEnabled={false}
         ListHeaderComponent={() => null}
         renderItem={({ item, index }) => (
           <View style={styles.standingRow}>
@@ -119,6 +150,7 @@ export default function ResultsScreen() {
       <FlatList
         data={game.picks}
         keyExtractor={(item) => item.id}
+        scrollEnabled={false}
         renderItem={({ item }) => {
           const player = game.players.find((p) => p.userId === item.userId);
           return (
@@ -136,7 +168,7 @@ export default function ResultsScreen() {
           );
         }}
       />
-    </View>
+    </ScrollView>
   );
 }
 
@@ -147,6 +179,16 @@ const styles = StyleSheet.create({
   venue: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
   date: { fontSize: 16, color: '#a0aec0', marginTop: 4 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', padding: 16, paddingBottom: 8 },
+  setlistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a2e',
+  },
+  setlistNumber: { fontSize: 12, color: '#a0aec0', width: 30 },
+  setlistSong: { fontSize: 14, color: '#fff', flex: 1 },
   standingRow: {
     flexDirection: 'row',
     alignItems: 'center',

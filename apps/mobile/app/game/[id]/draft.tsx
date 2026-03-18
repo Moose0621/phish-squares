@@ -19,6 +19,7 @@ export default function DraftScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, token } = useAuth();
   const socketRef = useRef<Socket | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [draftState, setDraftState] = useState<DraftState | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,19 +67,33 @@ export default function DraftScreen() {
     };
   }, [id, token, user?.id]);
 
-  // Song search
-  const handleSearch = useCallback(async (query: string) => {
+  // Cancel any pending search on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current !== null) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Song search with 300 ms debounce to avoid firing on every keystroke
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     if (query.length < 2) {
       setSearchResults([]);
       return;
     }
-    try {
-      const results = (await apiClient.searchSongs(query)) as Song[];
-      setSearchResults(results);
-    } catch {
-      // Ignore search errors
+    if (searchTimerRef.current !== null) {
+      clearTimeout(searchTimerRef.current);
     }
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const results = (await apiClient.searchSongs(query)) as Song[];
+        setSearchResults(results);
+      } catch {
+        // Ignore search errors
+      }
+    }, 300);
   }, []);
 
   const handleMakePick = (songName: string) => {

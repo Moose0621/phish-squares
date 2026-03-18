@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,14 @@ import {
   StyleSheet,
   Alert,
   Share,
+  RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../../auth-context';
 import { apiClient } from '../../api-client';
+import { API_URL } from '../../config';
+import { SocketEvent } from '@phish-squares/shared';
 
 interface GameDetail {
   id: string;
@@ -25,8 +29,10 @@ interface GameDetail {
 
 export default function LobbyScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [game, setGame] = useState<GameDetail | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
   const loadGame = useCallback(async () => {
     try {
@@ -35,15 +41,48 @@ export default function LobbyScreen() {
       if (data.status === 'DRAFTING') {
         router.replace(`/game/${id}/draft`);
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to load game');
     }
   }, [id]);
 
+  // Initial load + WebSocket connection for real-time lobby updates
   useEffect(() => {
     loadGame();
-    const interval = setInterval(loadGame, 5000); // Poll for updates
-    return () => clearInterval(interval);
+
+    if (!token) return;
+
+    const socket = io(`${API_URL}/draft`, {
+      auth: { token },
+    });
+
+    socket.on('connect', () => {
+      socket.emit(SocketEvent.JOIN_DRAFT, id);
+    });
+
+    socket.on('lobby-update', (data: GameDetail) => {
+      setGame(data);
+      if (data.status === 'DRAFTING') {
+        router.replace(`/game/${id}/draft`);
+      }
+    });
+
+    socket.on('error', (message: string) => {
+      console.warn('Lobby socket error:', message);
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [id, token, loadGame]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadGame();
+    setRefreshing(false);
   }, [loadGame]);
 
   const handleStartDraft = async () => {
@@ -92,6 +131,9 @@ export default function LobbyScreen() {
       <FlatList
         data={game.players}
         keyExtractor={(item) => item.userId}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#e94560" />
+        }
         renderItem={({ item, index }) => (
           <View style={styles.playerRow}>
             <Text style={styles.playerNumber}>{index + 1}</Text>

@@ -11,6 +11,7 @@ import songsRouter from './routes/songs';
 import adminRouter from './routes/admin';
 import { setupDraftSocket } from './services/draft-socket';
 import { ensureAdminExists } from './services/admin-seed';
+import { findGamesToScore, scoreGame } from './services/scoring';
 import { prisma } from './db';
 
 const app = express();
@@ -56,6 +57,23 @@ async function start(): Promise<void> {
   } catch (err) {
     console.error('Failed to seed admin user:', err);
   }
+
+  // Polling job: auto-score eligible games every 5 minutes
+  setInterval(async () => {
+    try {
+      const gameIds = await findGamesToScore();
+      for (const gameId of gameIds) {
+        try {
+          await scoreGame(gameId);
+          console.log(`Auto-scored game ${gameId}`);
+        } catch (err) {
+          console.error(`Failed to auto-score game ${gameId}:`, err);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to find games to score:', err);
+    }
+  }, 5 * 60 * 1000);
 
   httpServer.listen(config.port, () => {
     console.log(`🎸 Phish Squares API running on port ${config.port}`);
