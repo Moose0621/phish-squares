@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  username     String       @unique
+  passwordHash String       @map("password_hash")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  hostedGames  Game[]       @relation("GameHost")
+  gamePlayers  GamePlayer[]
+  picks        Pick[]
+
+  @@map("users")
+}
+
+model Game {
+  id               String       @id @default(uuid())
+  hostUserId       String       @map("host_user_id")
+  host             User         @relation("GameHost", fields: [hostUserId], references: [id])
+  showDate         DateTime     @map("show_date") @db.Date
+  showVenue        String       @map("show_venue")
+  status           GameStatus   @default(LOBBY)
+  inviteCode       String       @unique @map("invite_code")
+  draftOrder       String[]     @map("draft_order")
+  currentRound     Int          @default(0) @map("current_round")
+  currentPickIndex Int          @default(0) @map("current_pick_index")
+  totalRounds      Int          @default(11) @map("total_rounds")
+  maxPlayers       Int          @default(8) @map("max_players")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  players          GamePlayer[]
+  picks            Pick[]
+
+  @@index([inviteCode])
+  @@index([hostUserId])
+  @@index([status])
+  @@map("games")
+}
+
+model GamePlayer {
+  id            String   @id @default(uuid())
+  gameId        String   @map("game_id")
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId        String   @map("user_id")
+  user          User     @relation(fields: [userId], references: [id])
+  draftPosition Int      @default(0) @map("draft_position")
+  joinedAt      DateTime @default(now()) @map("joined_at")
+
+  @@unique([gameId, userId])
+  @@index([gameId])
+  @@index([userId])
+  @@map("game_players")
+}
+
+model Pick {
+  id        String   @id @default(uuid())
+  gameId    String   @map("game_id")
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  songName  String   @map("song_name")
+  round     Int
+  pickOrder Int      @map("pick_order")
+  isBonus   Boolean  @default(false) @map("is_bonus")
+  scored    Boolean?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([gameId, round])
+  @@index([gameId, userId])
+  @@map("picks")
+}
+
+model Song {
+  id          String  @id @default(uuid())
+  phishNetId  Int     @unique @map("phish_net_id")
+  name        String
+  timesPlayed Int     @default(0) @map("times_played")
+  lastPlayed  String? @map("last_played")
+
+  @@index([name])
+  @@map("songs")
+}
+
+enum GameStatus {
+  LOBBY
+  DRAFTING
+  LOCKED
+  SCORED
+}
