@@ -1,0 +1,48 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+      AZURE_CONTAINER_APP_NAME: phish-squares-api
+      AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t $AZURE_CONTAINER_REGISTRY/phish-squares-api:${{ github.sha }} .
+          docker build -t $AZURE_CONTAINER_REGISTRY/phish-squares-api:latest .
+          docker push $AZURE_CONTAINER_REGISTRY/phish-squares-api:${{ github.sha }}
+          docker push $AZURE_CONTAINER_REGISTRY/phish-squares-api:latest
+
+      - name: Deploy to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          acrName: ${{ secrets.ACR_NAME }}
+          containerAppName: ${{ env.AZURE_CONTAINER_APP_NAME }}
+          resourceGroup: ${{ env.AZURE_RESOURCE_GROUP }}
+          imageToDeploy: ${{ secrets.AZURE_CONTAINER_REGISTRY }}/phish-squares-api:${{ github.sha }}
+
+      - name: Run database migrations
+        run: |
+          npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
