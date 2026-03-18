@@ -1,4 +1,3 @@
-import { scoreGamePicks, BONUS_ROUND_MULTIPLIER } from '@phish-squares/shared';
 import { prisma } from '../db';
 import { fetchSetlistByDate } from './phishnet';
 
@@ -30,17 +29,6 @@ export async function scoreGame(gameId: string): Promise<void> {
   if (setlist.length === 0) {
     throw new Error('No setlist found for this show date');
   }
-
-  // Use shared scoring logic
-  const scores = scoreGamePicks(
-    game.picks.map((p) => ({
-      songName: p.songName,
-      isBonus: p.isBonus,
-      userId: p.userId,
-    })),
-    setlist,
-    BONUS_ROUND_MULTIPLIER,
-  );
 
   // Determine which songs were in the setlist (normalized)
   const normalizedSetlist = new Set(setlist.map((s) => s.trim().toLowerCase()));

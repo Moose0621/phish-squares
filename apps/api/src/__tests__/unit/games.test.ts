@@ -3,7 +3,6 @@ import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import gamesRouter from '../../routes/games';
 import { prisma } from '../../db';
-import { config } from '../../config';
 
 // Mock Prisma
 jest.mock('../../db', () => ({

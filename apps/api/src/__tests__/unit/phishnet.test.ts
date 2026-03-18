@@ -1,6 +1,5 @@
 import * as phishnet from '../../services/phishnet';
 import { prisma } from '../../db';
-import { config } from '../../config';
 
 // Mock prisma
 jest.mock('../../db', () => ({

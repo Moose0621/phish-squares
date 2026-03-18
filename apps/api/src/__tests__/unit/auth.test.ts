@@ -4,7 +4,6 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import authRouter from '../../routes/auth';
 import { prisma } from '../../db';
-import { config } from '../../config';
 
 // Mock Prisma
 jest.mock('../../db', () => ({
