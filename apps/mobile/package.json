@@ -23,17 +23,21 @@
     "expo-splash-screen": "~0.29.0",
     "expo-status-bar": "~2.0.0",
     "react": "18.3.1",
+    "react-dom": "18.3.1",
     "react-native": "0.76.6",
     "react-native-safe-area-context": "4.14.1",
     "react-native-screens": "~4.4.0",
     "react-native-web": "~0.19.13",
-    "react-dom": "18.3.1",
     "socket.io-client": "^4.7.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
-    "@types/react": "~18.3.0",
     "@types/jest": "^29.5.0",
+    "@types/react": "~18.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
+    "eslint": "^9.39.4",
+    "eslint-config-expo": "^55.0.0",
     "jest": "^29.7.0",
     "jest-expo": "~52.0.0",
     "typescript": "~5.4.0"

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import type ms from 'ms';
 import { registerSchema, loginSchema } from '@phish-squares/shared';
 import { prisma } from '../db';
 import { config } from '../config';
@@ -26,7 +27,7 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
   });
 
   const payload: AuthPayload = { userId: user.id, username: user.username };
-  const token = jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
+  const token = jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn as ms.StringValue });
 
   res.status(201).json({
     token,
@@ -50,7 +51,7 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response)
   }
 
   const payload: AuthPayload = { userId: user.id, username: user.username };
-  const token = jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
+  const token = jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn as ms.StringValue });
 
   res.json({
     token,

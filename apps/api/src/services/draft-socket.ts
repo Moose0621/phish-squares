@@ -84,7 +84,7 @@ export function setupDraftSocket(io: Server): void {
         if (game.status === 'DRAFTING' && !nextPick.isDraftComplete) {
           startPickTimer(draftNamespace, gameId, game.totalRounds);
         }
-      } catch (error) {
+      } catch {
         socket.emit(SocketEvent.ERROR, 'Failed to join draft');
       }
     });
@@ -207,7 +207,7 @@ export function setupDraftSocket(io: Server): void {
 
         // Start new timer
         startPickTimer(draftNamespace, data.gameId, game.totalRounds);
-      } catch (error) {
+      } catch {
         socket.emit(SocketEvent.ERROR, 'Failed to make pick');
       }
     });
@@ -234,7 +234,7 @@ export function setupDraftSocket(io: Server): void {
   });
 }
 
-function startPickTimer(draftNamespace: ReturnType<Server['of']>, gameId: string, totalRounds: number): void {
+function startPickTimer(draftNamespace: ReturnType<Server['of']>, gameId: string, _totalRounds: number): void {
   clearPickTimer(gameId);
 
   let remaining = PICK_TIMER_SECONDS;
