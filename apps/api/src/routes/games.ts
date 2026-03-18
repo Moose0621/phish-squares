@@ -8,6 +8,7 @@ import { generateInviteCode, generateDraftOrder } from '@phish-squares/shared';
 import { prisma } from '../db';
 import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
+import { scoreGame } from '../services/scoring';
 
 const router = Router();
 
@@ -233,6 +234,42 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
   }
 
   res.json(game);
+});
+
+// Score the game (host only) — fetches setlist from Phish.net and marks picks
+router.post('/:id/score', async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const userId = req.user!.userId;
+
+  const game = await prisma.game.findUnique({
+    where: { id },
+  });
+
+  if (!game) {
+    res.status(404).json({ error: 'Game not found' });
+    return;
+  }
+
+  if (game.hostUserId !== userId) {
+    res.status(403).json({ error: 'Only the host can score the game' });
+    return;
+  }
+
+  try {
+    await scoreGame(id);
+    res.json({ message: 'Game scored successfully' });
+  } catch (err) {
+    const message = (err as Error).message;
+    if (message === 'No setlist found for this show date') {
+      res.status(422).json({ error: message });
+    } else if (message.toLowerCase().includes('rate limit')) {
+      res.status(502).json({ error: 'Phish.net API rate limit exceeded' });
+    } else if (message === 'Game must be in LOCKED status to score') {
+      res.status(400).json({ error: message });
+    } else {
+      res.status(500).json({ error: 'Failed to score game' });
+    }
+  }
 });
 
 export default router;
