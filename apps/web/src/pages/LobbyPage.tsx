@@ -36,6 +36,7 @@ export default function LobbyPage() {
   }, [id, navigate]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadGame();
     const interval = setInterval(() => void loadGame(), 5000);
     return () => clearInterval(interval);

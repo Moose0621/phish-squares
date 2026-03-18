@@ -35,10 +35,6 @@ export default function ResultsPage() {
   const [game, setGame] = useState<GameResult | null>(null);
   const [standings, setStandings] = useState<PlayerScore[]>([]);
 
-  useEffect(() => {
-    void loadResults();
-  }, [id]);
-
   const loadResults = async () => {
     if (!id) return;
     try {
@@ -73,6 +69,12 @@ export default function ResultsPage() {
       console.error('Failed to load results:', err);
     }
   };
+
+  useEffect(() => {
+    void loadResults();
+    // loadResults is stable (no deps outside id, which is in the effect deps)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   if (!game) {
     return (

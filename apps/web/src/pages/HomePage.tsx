@@ -47,6 +47,7 @@ export default function HomePage() {
   useEffect(() => {
     if (token) {
       apiClient.setToken(token);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void loadGames();
     }
   }, [token, loadGames]);
