@@ -19,6 +19,7 @@ jest.mock('../../config', () => ({
 }));
 
 // Mock global fetch
+const originalFetch = global.fetch;
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
@@ -147,4 +148,8 @@ describe('fetchSetlistByDate', () => {
       'Phish.net API error: Rate limited',
     );
   });
+});
+
+afterAll(() => {
+  global.fetch = originalFetch;
 });
