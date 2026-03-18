@@ -237,8 +237,35 @@ router.post('/:id/score', async (req: Request, res: Response): Promise<void> => 
     await scoreGame(id);
     res.json({ message: 'Game scored successfully' });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to score game';
-    res.status(500).json({ error: message });
+    let status = 500;
+    let clientMessage = 'Failed to score game';
+
+    if (error instanceof Error) {
+      const rawMessage = error.message || '';
+      const lowerMessage = rawMessage.toLowerCase();
+
+      // Known business error: no setlist available for this show date
+      if (rawMessage.includes('No setlist found')) {
+        status = 422;
+        clientMessage = 'No setlist found for this show date';
+      }
+      // Known upstream error: rate limiting or similar from external service
+      else if (lowerMessage.includes('rate limit')) {
+        status = 502;
+        clientMessage = 'Upstream service temporarily unavailable';
+      }
+      // Other known/expected business errors can be mapped here as needed
+      else if (status !== 500) {
+        clientMessage = rawMessage;
+      }
+    }
+
+    if (status === 500) {
+      // Preserve generic message for unexpected internal errors
+      clientMessage = 'Failed to score game';
+    }
+
+    res.status(status).json({ error: clientMessage });
   }
 });
 
