@@ -3,11 +3,16 @@ import {
   createGameSchema,
   joinGameSchema,
   MIN_PLAYERS,
+  BONUS_ROUND_MULTIPLIER,
+  GameResult,
+  PlayerResult,
 } from '@phish-squares/shared';
-import { generateInviteCode, generateDraftOrder } from '@phish-squares/shared';
+import { generateInviteCode, generateDraftOrder, calculatePickScore } from '@phish-squares/shared';
 import { prisma } from '../db';
 import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
+import { scoreGame } from '../services/scoring';
+import { fetchSetlistByDate } from '../services/phishnet';
 
 const router = Router();
 
@@ -203,6 +208,68 @@ router.post('/:id/start', async (req: Request, res: Response): Promise<void> => 
   res.json(updatedGame);
 });
 
+// Score a game (any player in the game when status is LOCKED)
+router.post('/:id/score', async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const userId = req.user!.userId;
+
+  const game = await prisma.game.findUnique({
+    where: { id },
+    include: { players: true },
+  });
+
+  if (!game) {
+    res.status(404).json({ error: 'Game not found' });
+    return;
+  }
+
+  const isPlayer = game.players.some((p) => p.userId === userId);
+  if (!isPlayer) {
+    res.status(403).json({ error: 'You are not a player in this game' });
+    return;
+  }
+
+  if (game.status !== 'LOCKED') {
+    res.status(400).json({ error: 'Game must be in LOCKED status to score' });
+    return;
+  }
+
+  try {
+    await scoreGame(id);
+    res.json({ message: 'Game scored successfully' });
+  } catch (error) {
+    let status = 500;
+    let clientMessage = 'Failed to score game';
+
+    if (error instanceof Error) {
+      const rawMessage = error.message || '';
+      const lowerMessage = rawMessage.toLowerCase();
+
+      // Known business error: no setlist available for this show date
+      if (rawMessage.includes('No setlist found')) {
+        status = 422;
+        clientMessage = 'No setlist found for this show date';
+      }
+      // Known upstream error: rate limiting or similar from external service
+      else if (lowerMessage.includes('rate limit')) {
+        status = 502;
+        clientMessage = 'Upstream service temporarily unavailable';
+      }
+      // Other known/expected business errors can be mapped here as needed
+      else if (status !== 500) {
+        clientMessage = rawMessage;
+      }
+    }
+
+    if (status === 500) {
+      // Preserve generic message for unexpected internal errors
+      clientMessage = 'Failed to score game';
+    }
+
+    res.status(status).json({ error: clientMessage });
+  }
+});
+
 // Get game results
 router.get('/:id/results', async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
@@ -232,7 +299,61 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
     return;
   }
 
-  res.json(game);
+  // Build aggregated player results
+  const playerScores = new Map<string, { picks: typeof game.picks; totalPoints: number }>();
+
+  for (const player of game.players) {
+    playerScores.set(player.userId, { picks: [], totalPoints: 0 });
+  }
+
+  for (const pick of game.picks) {
+    const entry = playerScores.get(pick.userId);
+    if (entry) {
+      entry.picks.push(pick);
+      if (pick.scored === true) {
+        entry.totalPoints += calculatePickScore(pick.isBonus, true, BONUS_ROUND_MULTIPLIER);
+      }
+    }
+  }
+
+  // Build sorted player results
+  const playerResults: PlayerResult[] = game.players
+    .map((player) => {
+      const scores = playerScores.get(player.userId)!;
+      return {
+        userId: player.userId,
+        username: player.user?.username ?? '',
+        // Convert nullable scored (null = unscored) to boolean for ScoredPick type
+        picks: scores.picks.map((p) => ({ ...p, scored: p.scored ?? false })),
+        totalPoints: scores.totalPoints,
+        rank: 0, // will be filled in below
+      };
+    })
+    .sort((a, b) => b.totalPoints - a.totalPoints);
+
+  // Assign ranks (handle ties)
+  for (let i = 0; i < playerResults.length; i++) {
+    if (i === 0 || playerResults[i].totalPoints < playerResults[i - 1].totalPoints) {
+      playerResults[i].rank = i + 1;
+    } else {
+      playerResults[i].rank = playerResults[i - 1].rank;
+    }
+  }
+
+  const showDate = game.showDate.toISOString().split('T')[0];
+
+  // Fetch the real setlist from Phish.net for accurate song list and ordering
+  const setlist = await fetchSetlistByDate(showDate);
+
+  const result: GameResult = {
+    gameId: game.id,
+    showDate,
+    showVenue: game.showVenue,
+    setlist,
+    playerResults,
+  };
+
+  res.json(result);
 });
 
 export default router;

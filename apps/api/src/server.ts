@@ -27,11 +27,12 @@ app.use(helmet());
 app.use(cors({ origin: config.corsOrigin }));
 app.use(express.json());
 
-// Rate limiting for auth endpoints
+// Rate limiting for auth endpoints (disabled in test environment)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 20, // 20 requests per window
   message: { error: 'Too many requests, please try again later' },
+  skip: () => config.nodeEnv === 'test',
 });
 
 // Routes
