@@ -1,0 +1,47 @@
+.container {
+  flex: 1;
+  background-color: var(--bg);
+  padding: 24px;
+  min-height: 100vh;
+}
+
+.card {
+  background-color: var(--card);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  border: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
+.avatar {
+  font-size: 64px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.username {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text);
+  margin: 0;
+}
+
+.logoutButton {
+  background-color: var(--primary);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin-top: 32px;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text);
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  transition: opacity 0.2s;
+}
+
+.logoutButton:hover {
+  opacity: 0.9;
+}
