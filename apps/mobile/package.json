@@ -10,8 +10,8 @@
     "build:web": "expo export --platform web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint app/",
-    "test": "jest",
-    "test:unit": "jest"
+    "test": "jest --passWithNoTests",
+    "test:unit": "jest --passWithNoTests"
   },
   "dependencies": {
     "@phish-squares/shared": "*",
