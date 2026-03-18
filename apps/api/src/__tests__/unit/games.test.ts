@@ -397,7 +397,7 @@ describe('POST /api/games/:id/score', () => {
     expect(res.status).toBe(403);
   });
 
-  it('should return 500 if scoring fails', async () => {
+  it('should return 422 if no setlist found', async () => {
     (mockPrisma.game.findUnique as jest.Mock).mockResolvedValue({
       id: 'game-1',
       status: 'LOCKED',
@@ -410,8 +410,8 @@ describe('POST /api/games/:id/score', () => {
       .post('/api/games/game-1/score')
       .set('Authorization', `Bearer ${token}`);
 
-    expect(res.status).toBe(500);
-    expect(res.body.error).toBe('No setlist found');
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('No setlist found for this show date');
   });
 });
 
