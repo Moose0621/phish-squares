@@ -12,6 +12,7 @@ import { prisma } from '../db';
 import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { scoreGame } from '../services/scoring';
+import { fetchSetlistByDate } from '../services/phishnet';
 
 const router = Router();
 
@@ -341,19 +342,26 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
 
   const showDate = game.showDate.toISOString().split('T')[0];
 
-  // Build setlist from correct picks (unique songs that were scored true)
-  const setlistSongs = new Set<string>();
-  for (const pick of game.picks) {
-    if (pick.scored === true) {
-      setlistSongs.add(pick.songName);
+  // Fetch the real setlist from Phish.net for accurate song list and ordering
+  let setlist: string[];
+  try {
+    setlist = await fetchSetlistByDate(showDate);
+  } catch {
+    // Fallback: derive setlist from correct picks if Phish.net is unavailable
+    const setlistSongs = new Set<string>();
+    for (const pick of game.picks) {
+      if (pick.scored === true) {
+        setlistSongs.add(pick.songName);
+      }
     }
+    setlist = [...setlistSongs];
   }
 
   const result: GameResult = {
     gameId: game.id,
     showDate,
     showVenue: game.showVenue,
-    setlist: [...setlistSongs],
+    setlist,
     playerResults,
   };
 

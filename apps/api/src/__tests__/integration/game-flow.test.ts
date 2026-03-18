@@ -86,6 +86,11 @@ jest.mock('../../services/scoring', () => ({
   }),
 }));
 
+// Mock phishnet service (used by results endpoint to fetch real setlist)
+jest.mock('../../services/phishnet', () => ({
+  fetchSetlistByDate: jest.fn(async () => ['Tweezer', 'Fluffhead', 'Stash']),
+}));
+
 // Mock Prisma with in-memory store
 jest.mock('../../db', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -373,7 +378,8 @@ describe('Integration: Full Game Flow', () => {
     expect(res.body.gameId).toBe(gameId);
     expect(res.body.showVenue).toBe('MSG');
     expect(res.body).toHaveProperty('playerResults');
-    expect(res.body).toHaveProperty('setlist');
+    // Setlist comes from the mocked fetchSetlistByDate, reflecting the real show setlist
+    expect(res.body.setlist).toEqual(['Tweezer', 'Fluffhead', 'Stash']);
     expect(res.body.playerResults).toHaveLength(2);
 
     // Verify ranking

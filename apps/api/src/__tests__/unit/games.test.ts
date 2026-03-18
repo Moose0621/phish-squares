@@ -36,10 +36,17 @@ jest.mock('../../services/scoring', () => ({
   scoreGame: jest.fn(),
 }));
 
+// Mock phishnet service
+jest.mock('../../services/phishnet', () => ({
+  fetchSetlistByDate: jest.fn(),
+}));
+
 import { scoreGame } from '../../services/scoring';
+import { fetchSetlistByDate } from '../../services/phishnet';
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 const mockScoreGame = scoreGame as jest.MockedFunction<typeof scoreGame>;
+const mockFetchSetlistByDate = fetchSetlistByDate as jest.MockedFunction<typeof fetchSetlistByDate>;
 
 function createApp() {
   const app = express();
@@ -438,6 +445,8 @@ describe('GET /api/games/:id/results', () => {
         { id: 'p3', gameId: 'game-1', userId: 'user-2', songName: 'Stash', round: 2, pickOrder: 0, isBonus: true, scored: true, createdAt: new Date() },
       ],
     });
+    // Return the real setlist from Phish.net (includes songs nobody picked)
+    mockFetchSetlistByDate.mockResolvedValue(['Tweezer', 'Stash', 'Fluffhead', 'YEM']);
 
     const app = createApp();
     const res = await request(app)
@@ -448,8 +457,9 @@ describe('GET /api/games/:id/results', () => {
     expect(res.body.gameId).toBe('game-1');
     expect(res.body.showDate).toBe('2025-08-15');
     expect(res.body.showVenue).toBe('MSG');
-    expect(res.body.setlist).toContain('Tweezer');
-    expect(res.body.setlist).toContain('Stash');
+    // Setlist should be the real setlist from Phish.net, not just correct picks
+    expect(res.body.setlist).toEqual(['Tweezer', 'Stash', 'Fluffhead', 'YEM']);
+    expect(mockFetchSetlistByDate).toHaveBeenCalledWith('2025-08-15');
     expect(res.body.playerResults).toHaveLength(2);
 
     // Player 2 (Stash bonus=2 + correct picks) should rank higher
@@ -477,6 +487,7 @@ describe('GET /api/games/:id/results', () => {
         { id: 'p2', gameId: 'game-1', userId: 'user-2', songName: 'Stash', round: 1, pickOrder: 1, isBonus: false, scored: true, createdAt: new Date() },
       ],
     });
+    mockFetchSetlistByDate.mockResolvedValue(['Tweezer', 'Stash']);
 
     const app = createApp();
     const res = await request(app)
@@ -486,6 +497,32 @@ describe('GET /api/games/:id/results', () => {
     expect(res.status).toBe(200);
     expect(res.body.playerResults[0].rank).toBe(1);
     expect(res.body.playerResults[1].rank).toBe(1); // Same rank for tie
+  });
+
+  it('should fall back to correct-picks setlist if Phish.net fetch fails', async () => {
+    (mockPrisma.game.findUnique as jest.Mock).mockResolvedValue({
+      id: 'game-1',
+      status: 'SCORED',
+      showDate: new Date('2025-08-15'),
+      showVenue: 'MSG',
+      players: [
+        { userId: 'user-1', user: { id: 'user-1', username: 'player1' } },
+      ],
+      picks: [
+        { id: 'p1', gameId: 'game-1', userId: 'user-1', songName: 'Tweezer', round: 1, pickOrder: 0, isBonus: false, scored: true, createdAt: new Date() },
+        { id: 'p2', gameId: 'game-1', userId: 'user-1', songName: 'Wrong Song', round: 2, pickOrder: 0, isBonus: false, scored: false, createdAt: new Date() },
+      ],
+    });
+    mockFetchSetlistByDate.mockRejectedValue(new Error('Phish.net API error: 503 Service Unavailable'));
+
+    const app = createApp();
+    const res = await request(app)
+      .get('/api/games/game-1/results')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    // Falls back to correct picks only
+    expect(res.body.setlist).toEqual(['Tweezer']);
   });
 
   it('should return 400 if game is not scored', async () => {
