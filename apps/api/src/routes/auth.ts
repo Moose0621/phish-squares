@@ -26,12 +26,12 @@ router.post('/register', validate(registerSchema), async (req: Request, res: Res
     data: { username, passwordHash },
   });
 
-  const payload: AuthPayload = { userId: user.id, username: user.username };
+  const payload: AuthPayload = { userId: user.id, username: user.username, isAdmin: user.isAdmin };
   const token = jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn as ms.StringValue });
 
   res.status(201).json({
     token,
-    user: { id: user.id, username: user.username },
+    user: { id: user.id, username: user.username, isAdmin: user.isAdmin },
   });
 });
 
@@ -50,12 +50,12 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response)
     return;
   }
 
-  const payload: AuthPayload = { userId: user.id, username: user.username };
+  const payload: AuthPayload = { userId: user.id, username: user.username, isAdmin: user.isAdmin };
   const token = jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn as ms.StringValue });
 
   res.json({
     token,
-    user: { id: user.id, username: user.username },
+    user: { id: user.id, username: user.username, isAdmin: user.isAdmin },
   });
 });
 

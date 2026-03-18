@@ -8,7 +8,9 @@ import { config } from './config';
 import authRouter from './routes/auth';
 import gamesRouter from './routes/games';
 import songsRouter from './routes/songs';
+import adminRouter from './routes/admin';
 import { setupDraftSocket } from './services/draft-socket';
+import { ensureAdminExists } from './services/admin-seed';
 import { prisma } from './db';
 
 const app = express();
@@ -42,14 +44,25 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/games', gamesRouter);
 app.use('/api/songs', songsRouter);
+app.use('/api/admin', adminRouter);
 
 // Setup WebSocket handlers
 setupDraftSocket(io);
 
 // Start server
-httpServer.listen(config.port, () => {
-  console.log(`🎸 Phish Squares API running on port ${config.port}`);
-});
+async function start(): Promise<void> {
+  try {
+    await ensureAdminExists();
+  } catch (err) {
+    console.error('Failed to seed admin user:', err);
+  }
+
+  httpServer.listen(config.port, () => {
+    console.log(`🎸 Phish Squares API running on port ${config.port}`);
+  });
+}
+
+start();
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {

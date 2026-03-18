@@ -10,6 +10,7 @@ export enum GameStatus {
 export interface User {
   id: string;
   username: string;
+  isAdmin: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +18,7 @@ export interface User {
 export interface UserPublic {
   id: string;
   username: string;
+  isAdmin: boolean;
 }
 
 // ── Game ──

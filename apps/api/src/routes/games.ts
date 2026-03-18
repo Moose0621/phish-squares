@@ -87,9 +87,9 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  // Check user is a player in this game
+  // Allow admin to view any game
   const isPlayer = game.players.some((p) => p.userId === userId);
-  if (!isPlayer) {
+  if (!isPlayer && !req.user!.isAdmin) {
     res.status(403).json({ error: 'You are not a player in this game' });
     return;
   }
@@ -222,7 +222,7 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
   }
 
   const isPlayer = game.players.some((p) => p.userId === userId);
-  if (!isPlayer) {
+  if (!isPlayer && !req.user!.isAdmin) {
     res.status(403).json({ error: 'You are not a player in this game' });
     return;
   }
