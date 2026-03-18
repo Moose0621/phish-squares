@@ -325,7 +325,7 @@ router.get('/:id/setlist', async (req: Request, res: Response): Promise<void> =>
       res.status(404).json({ error: 'Setlist not available yet for this show' });
       return;
     }
-    res.status(503).json({ error: 'Could not fetch setlist from Phish.net' });
+    res.status(503).json({ error: 'Setlist service temporarily unavailable. Please try again later.' });
   }
 });
 

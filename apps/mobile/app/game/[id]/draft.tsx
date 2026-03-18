@@ -77,6 +77,7 @@ export default function DraftScreen() {
   }, []);
 
   // Song search with 300 ms debounce to avoid firing on every keystroke
+  const SEARCH_DEBOUNCE_MS = 300;
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     if (query.length < 2) {
@@ -93,7 +94,7 @@ export default function DraftScreen() {
       } catch {
         // Ignore search errors
       }
-    }, 300);
+    }, SEARCH_DEBOUNCE_MS);
   }, []);
 
   const handleMakePick = (songName: string) => {

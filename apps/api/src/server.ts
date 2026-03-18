@@ -59,6 +59,7 @@ async function start(): Promise<void> {
   }
 
   // Polling job: auto-score eligible games every 5 minutes
+  const SCORING_INTERVAL_MS = 5 * 60 * 1000;
   setInterval(async () => {
     try {
       const gameIds = await findGamesToScore();
@@ -73,7 +74,7 @@ async function start(): Promise<void> {
     } catch (err) {
       console.error('Failed to find games to score:', err);
     }
-  }, 5 * 60 * 1000);
+  }, SCORING_INTERVAL_MS);
 
   httpServer.listen(config.port, () => {
     console.log(`🎸 Phish Squares API running on port ${config.port}`);
