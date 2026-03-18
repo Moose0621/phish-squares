@@ -296,6 +296,7 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
       return {
         userId: player.userId,
         username: player.user?.username ?? '',
+        // Convert nullable scored (null = unscored) to boolean for ScoredPick type
         picks: scores.picks.map((p) => ({ ...p, scored: p.scored ?? false })),
         totalPoints: scores.totalPoints,
         rank: 0, // will be filled in below
