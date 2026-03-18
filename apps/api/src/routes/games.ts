@@ -207,7 +207,7 @@ router.post('/:id/start', async (req: Request, res: Response): Promise<void> => 
   res.json(updatedGame);
 });
 
-// Score a game (host only, or any player if game is past show date)
+// Score a game (any player in the game when status is LOCKED)
 router.post('/:id/score', async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const userId = req.user!.userId;
