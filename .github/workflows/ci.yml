@@ -100,6 +100,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/phishsquares_e2e
           JWT_SECRET: test-secret
           API_URL: http://localhost:3000
+          NODE_ENV: test
       - uses: actions/upload-artifact@v4
         if: always()
         with:
