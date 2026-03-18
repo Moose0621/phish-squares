@@ -2,7 +2,6 @@ import { Router, Request, Response } from 'express';
 import {
   createGameSchema,
   joinGameSchema,
-  GameStatus,
   MIN_PLAYERS,
 } from '@phish-squares/shared';
 import { generateInviteCode, generateDraftOrder } from '@phish-squares/shared';
