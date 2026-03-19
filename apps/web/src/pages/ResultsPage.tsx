@@ -82,57 +82,45 @@ export default function ResultsPage() {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th className={styles.roundHeader}>Round</th>
-              {sorted.map((player: PlayerResult) => (
-                <th key={player.userId} className={styles.playerHeader}>
-                  <span className={styles.playerName}>{player.username}</span>
-                  {isScored && (
-                    <span className={styles.playerScore}>{player.totalPoints} pts</span>
-                  )}
-                </th>
-              ))}
+              <th className={styles.playerHeader}>Player</th>
+              {rounds.map((round) => {
+                const isBonus = sorted[0]?.picks.find((p) => p.round === round)?.isBonus;
+                return (
+                  <th key={round} className={`${styles.roundHeader} ${isBonus ? styles.bonusHeader : ''}`}>
+                    {isBonus ? '★' : round}
+                  </th>
+                );
+              })}
+              {isScored && <th className={styles.roundHeader}>Total</th>}
             </tr>
           </thead>
           <tbody>
-            {rounds.map((round) => {
-              const isBonus = sorted[0]?.picks.find((p) => p.round === round)?.isBonus;
-              return (
-                <tr key={round} className={isBonus ? styles.bonusRow : ''}>
-                  <td className={styles.roundCell}>
-                    {round}
-                    {isBonus && <span className={styles.bonusLabel}>★</span>}
-                  </td>
-                  {sorted.map((player: PlayerResult) => {
-                    const pick = pickGrid.get(player.userId)?.get(round);
-                    if (!pick) return <td key={player.userId} className={styles.pickCell}>—</td>;
-                    return (
-                      <td
-                        key={player.userId}
-                        className={`${styles.pickCell} ${isScored && pick.scored ? styles.correctCell : ''} ${isScored && !pick.scored ? styles.missCell : ''}`}
-                      >
-                        <span className={styles.songName}>{pick.songName}</span>
-                        {isScored && (
-                          <span className={styles.statusIcon}>{pick.scored ? '✅' : '❌'}</span>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-          </tbody>
-          {isScored && (
-            <tfoot>
-              <tr>
-                <td className={styles.roundCell}>Total</td>
-                {sorted.map((player: PlayerResult) => (
-                  <td key={player.userId} className={styles.totalCell}>
-                    {player.totalPoints} pts
-                  </td>
-                ))}
+            {sorted.map((player: PlayerResult) => (
+              <tr key={player.userId}>
+                <td className={styles.playerCell}>
+                  <span className={styles.playerName}>{player.username}</span>
+                </td>
+                {rounds.map((round) => {
+                  const pick = pickGrid.get(player.userId)?.get(round);
+                  if (!pick) return <td key={round} className={styles.pickCell}>—</td>;
+                  return (
+                    <td
+                      key={round}
+                      className={`${styles.pickCell} ${isScored && pick.scored ? styles.correctCell : ''}`}
+                    >
+                      <span className={styles.songName}>{pick.songName}</span>
+                      {isScored && (
+                        <span className={styles.statusIcon}>{pick.scored ? '✅' : '❌'}</span>
+                      )}
+                    </td>
+                  );
+                })}
+                {isScored && (
+                  <td className={styles.totalCell}>{player.totalPoints}</td>
+                )}
               </tr>
-            </tfoot>
-          )}
+            ))}
+          </tbody>
         </table>
       </div>
     </div>
