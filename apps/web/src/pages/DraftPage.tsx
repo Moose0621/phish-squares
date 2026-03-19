@@ -17,6 +17,7 @@ export default function DraftPage() {
   const [draftState, setDraftState] = useState<DraftState | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Song[]>([]);
+  const [writeInError, setWriteInError] = useState('');
   const [timer, setTimer] = useState(60);
   const [isMyTurn, setIsMyTurn] = useState(false);
 
@@ -59,6 +60,11 @@ export default function DraftPage() {
     };
   }, [id, token, user?.id, navigate]);
 
+  // Build a set of picked song names (lowercase) for filtering
+  const pickedSongNames = new Set(
+    (draftState?.picks ?? []).map((p) => p.songName.trim().toLowerCase()),
+  );
+
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
     if (query.length < 2) {
@@ -66,18 +72,45 @@ export default function DraftPage() {
       return;
     }
     try {
-      const results = (await apiClient.searchSongs(query)) as Song[];
-      setSearchResults(results);
+      const results = (await apiClient.searchSongs(query, id)) as Song[];
+      // Filter out songs already picked in this game
+      setSearchResults(
+        results.filter((s) => !pickedSongNames.has(s.name.trim().toLowerCase())),
+      );
     } catch {
       // Ignore search errors
     }
-  }, []);
+  }, [pickedSongNames]);
 
   const handleMakePick = (songName: string) => {
     if (!socketRef.current || !isMyTurn) return;
     socketRef.current.emit(SocketEvent.MAKE_PICK, { gameId: id, songName });
     setSearchQuery('');
     setSearchResults([]);
+    setWriteInError('');
+  };
+
+  const handleWriteIn = async () => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    setWriteInError('');
+
+    // Block write-ins of already-picked songs
+    if (pickedSongNames.has(trimmed.toLowerCase())) {
+      setWriteInError('That song has already been picked in this game');
+      return;
+    }
+
+    try {
+      const song = await apiClient.addCustomSong(trimmed);
+      handleMakePick(song.name);
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('already exists')) {
+        setWriteInError(err.message);
+      } else {
+        setWriteInError(err instanceof Error ? err.message : 'Failed to add song');
+      }
+    }
   };
 
   if (!draftState) {
@@ -137,6 +170,17 @@ export default function DraftPage() {
                   <span className={styles.songMeta}>Played {song.timesPlayed}x</span>
                 </button>
               ))}
+            </div>
+          )}
+          {searchQuery.length >= 2 && searchResults.length === 0 && (
+            <div className={styles.writeInContainer}>
+              <p className={styles.writeInHint}>
+                No matches found. Write in &ldquo;{searchQuery}&rdquo; as a custom song?
+              </p>
+              {writeInError && <p className={styles.writeInError}>{writeInError}</p>}
+              <button className={styles.writeInButton} onClick={() => void handleWriteIn()}>
+                Write In
+              </button>
             </div>
           )}
         </div>

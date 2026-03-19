@@ -294,8 +294,8 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
     return;
   }
 
-  if (game.status !== 'SCORED') {
-    res.status(400).json({ error: 'Game has not been scored yet' });
+  if (game.status !== 'SCORED' && game.status !== 'LOCKED') {
+    res.status(400).json({ error: 'Game has not finished drafting yet' });
     return;
   }
 
@@ -342,8 +342,13 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
 
   const showDate = game.showDate.toISOString().split('T')[0];
 
-  // Fetch the real setlist from Phish.net for accurate song list and ordering
-  const setlist = await fetchSetlistByDate(showDate);
+  // Try to fetch the real setlist — fail gracefully if unavailable
+  let setlist: string[] = [];
+  try {
+    setlist = await fetchSetlistByDate(showDate);
+  } catch {
+    // Setlist unavailable (no API key, show hasn't happened yet, etc.)
+  }
 
   const result: GameResult = {
     gameId: game.id,

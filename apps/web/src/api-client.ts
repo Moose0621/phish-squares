@@ -62,12 +62,46 @@ class ApiClient {
     return this.request(`/api/games/${encodeURIComponent(id)}/results`);
   }
 
-  async searchSongs(query: string) {
-    return this.request(`/api/songs/search?q=${encodeURIComponent(query)}`);
+  async searchSongs(query: string, gameId?: string) {
+    let url = `/api/songs/search?q=${encodeURIComponent(query)}`;
+    if (gameId) url += `&gameId=${encodeURIComponent(gameId)}`;
+    return this.request(url);
   }
 
   async getAllSongs() {
     return this.request('/api/songs');
+  }
+
+  async addCustomSong(name: string) {
+    return this.request<{ id: string; name: string; isCustom: boolean }>('/api/songs/custom', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  // Admin endpoints
+  async getUsers() {
+    return this.request<{ id: string; username: string; isAdmin: boolean; createdAt: string }[]>('/api/admin/users');
+  }
+
+  async createUser(username: string, password: string) {
+    return this.request<{ id: string; username: string; isAdmin: boolean; createdAt: string }>('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+  }
+
+  async deleteUser(id: string) {
+    return this.request(`/api/admin/users/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async resetUserPassword(id: string, password: string) {
+    return this.request(`/api/admin/users/${encodeURIComponent(id)}/password`, {
+      method: 'PATCH',
+      body: JSON.stringify({ password }),
+    });
   }
 }
 

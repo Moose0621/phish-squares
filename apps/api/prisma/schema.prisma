@@ -11,6 +11,7 @@ model User {
   id           String       @id @default(uuid())
   username     String       @unique
   passwordHash String       @map("password_hash")
+  isAdmin      Boolean      @default(false) @map("is_admin")
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
   hostedGames  Game[]       @relation("GameHost")
@@ -79,10 +80,11 @@ model Pick {
 
 model Song {
   id          String  @id @default(uuid())
-  phishNetId  Int     @unique @map("phish_net_id")
-  name        String
+  name        String  @unique
+  artist      String  @default("")
   timesPlayed Int     @default(0) @map("times_played")
   lastPlayed  String? @map("last_played")
+  isCustom    Boolean @default(false) @map("is_custom")
 
   @@index([name])
   @@map("songs")

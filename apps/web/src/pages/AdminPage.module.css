@@ -1,0 +1,142 @@
+.container {
+  flex: 1;
+  padding: 24px;
+  background-color: var(--bg);
+  min-height: 100vh;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.input {
+  background-color: var(--card);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  outline: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.input::placeholder {
+  color: #888;
+}
+
+.input:focus {
+  border-color: var(--primary);
+}
+
+.addButton {
+  background-color: var(--primary);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--text);
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.addButton:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.addButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.userList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.userItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.username {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.badge {
+  background-color: var(--primary);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.deleteButton {
+  background-color: transparent;
+  border: 1px solid #e94560;
+  color: #e94560;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteButton:hover {
+  background-color: #e94560;
+  color: white;
+}
+
+.error {
+  color: #e94560;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 24px;
+}

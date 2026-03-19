@@ -5,6 +5,7 @@ import { config } from '../config';
 export interface AuthPayload {
   userId: string;
   username: string;
+  isAdmin: boolean;
 }
 
 declare global {
@@ -30,4 +31,12 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
   } catch {
     res.status(401).json({ error: 'Invalid or expired token' });
   }
+}
+
+export function adminMiddleware(req: Request, res: Response, next: NextFunction): void {
+  if (!req.user?.isAdmin) {
+    res.status(403).json({ error: 'Admin access required' });
+    return;
+  }
+  next();
 }

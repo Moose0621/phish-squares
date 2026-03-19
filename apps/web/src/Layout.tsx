@@ -2,6 +2,7 @@ import { Navigate, Outlet, NavLink } from 'react-router-dom';
 import { useAuth } from './auth-context';
 import styles from './Layout.module.css';
 
+
 export function ProtectedRoute() {
   const { isLoading, token } = useAuth();
 
@@ -21,6 +22,8 @@ export function ProtectedRoute() {
 }
 
 export function AppLayout() {
+  const { user } = useAuth();
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <nav className={styles.nav}>
@@ -37,6 +40,16 @@ export function AppLayout() {
           >
             Games
           </NavLink>
+          {user?.isAdmin && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }: { isActive: boolean }) =>
+                `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
+              }
+            >
+              Admin
+            </NavLink>
+          )}
           <NavLink
             to="/profile"
             className={({ isActive }: { isActive: boolean }) =>

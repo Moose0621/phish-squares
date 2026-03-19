@@ -17,6 +17,7 @@ export interface User {
 export interface UserPublic {
   id: string;
   username: string;
+  isAdmin?: boolean;
 }
 
 // ── Game ──
@@ -64,13 +65,14 @@ export interface Pick {
   createdAt: Date;
 }
 
-// ── Song (cached from Phish.net) ──
+// ── Song ──
 export interface Song {
   id: string;
-  phishNetId: number;
   name: string;
+  artist: string;
   timesPlayed: number;
   lastPlayed: string | null;
+  isCustom: boolean;
 }
 
 // ── Draft State (real-time) ──

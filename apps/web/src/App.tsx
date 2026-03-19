@@ -7,6 +7,7 @@ import LobbyPage from './pages/LobbyPage';
 import DraftPage from './pages/DraftPage';
 import ResultsPage from './pages/ResultsPage';
 import ProfilePage from './pages/ProfilePage';
+import AdminPage from './pages/AdminPage';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="/game/:id/lobby" element={<LobbyPage />} />
           <Route path="/game/:id/draft" element={<DraftPage />} />
           <Route path="/game/:id/results" element={<ResultsPage />} />
