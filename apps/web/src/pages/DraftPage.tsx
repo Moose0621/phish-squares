@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../auth-context';
@@ -61,8 +61,9 @@ export default function DraftPage() {
   }, [id, token, user?.id, navigate]);
 
   // Build a set of picked song names (lowercase) for filtering
-  const pickedSongNames = new Set(
-    (draftState?.picks ?? []).map((p) => p.songName.trim().toLowerCase()),
+  const pickedSongNames = useMemo(
+    () => new Set((draftState?.picks ?? []).map((p) => p.songName.trim().toLowerCase())),
+    [draftState?.picks],
   );
 
   const handleSearch = useCallback(async (query: string) => {
@@ -80,7 +81,7 @@ export default function DraftPage() {
     } catch {
       // Ignore search errors
     }
-  }, [pickedSongNames]);
+  }, [id, pickedSongNames]);
 
   const handleMakePick = (songName: string) => {
     if (!socketRef.current || !isMyTurn) return;
