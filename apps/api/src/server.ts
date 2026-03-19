@@ -26,13 +26,15 @@ const io = new Server(httpServer, {
 // Middleware
 app.use(helmet());
 app.use(cors({ origin: config.corsOrigin }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 // Rate limiting for auth endpoints (disabled in test environment)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // 20 requests per window
+  max: 10, // 10 requests per window
   message: { error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
   skip: () => config.nodeEnv === 'test',
 });
 
@@ -50,6 +52,11 @@ app.use('/api/admin', adminRouter);
 setupDraftSocket(io);
 
 // Start server
+if (config.nodeEnv === 'production' && config.jwtSecret === 'dev-secret-change-in-production') {
+  console.error('FATAL: JWT_SECRET must be set in production');
+  process.exit(1);
+}
+
 httpServer.listen(config.port, () => {
   console.log(`🎸 Phish Squares API running on port ${config.port}`);
 });
