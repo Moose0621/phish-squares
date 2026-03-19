@@ -1,0 +1,14 @@
+node_modules
+.git
+.github
+e2e
+*.md
+apps/api/scripts
+apps/mobile
+dist
+build
+.env
+.env.*
+*.tsbuildinfo
+_check-syntax.mjs
+infra

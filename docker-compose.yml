@@ -19,19 +19,56 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: api
     ports:
       - "3000:3000"
     environment:
-      PORT: 3000
+      PORT: "3000"
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/phishsquares
-      JWT_SECRET: dev-secret-local-only
-      NODE_ENV: development
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-local-only}
+      NODE_ENV: ${NODE_ENV:-development}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./apps/api/src:/app/apps/api/src
-      - ./packages/shared/src:/app/packages/shared/src
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    command: npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/phishsquares
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
 
 volumes:
   pgdata:

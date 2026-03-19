@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
 import {
   createGameSchema,
   joinGameSchema,
@@ -13,8 +14,20 @@ import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { scoreGame } from '../services/scoring';
 import { fetchSetlistByDate } from '../services/phishnet';
+import { parseSetlistImage, fuzzyMatchSong } from '../services/setlist-parser';
 
 const router = Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  },
+});
 
 // All game routes require authentication
 router.use(authMiddleware);
@@ -352,6 +365,8 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
 
   const result: GameResult = {
     gameId: game.id,
+    hostUserId: game.hostUserId,
+    status: game.status as GameResult['status'],
     showDate,
     showVenue: game.showVenue,
     setlist,
@@ -359,6 +374,103 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
   };
 
   res.json(result);
+});
+
+// Upload setlist image for OCR parsing (host only, game must be LOCKED)
+router.post('/:id/setlist-image', upload.single('image'), async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const userId = req.user!.userId;
+
+  const game = await prisma.game.findUnique({
+    where: { id },
+    include: { players: true },
+  });
+
+  if (!game) {
+    res.status(404).json({ error: 'Game not found' });
+    return;
+  }
+
+  if (game.hostUserId !== userId) {
+    res.status(403).json({ error: 'Only the host can upload a setlist image' });
+    return;
+  }
+
+  if (game.status !== 'LOCKED') {
+    res.status(400).json({ error: 'Game must be in LOCKED status to upload a setlist' });
+    return;
+  }
+
+  if (!req.file) {
+    res.status(400).json({ error: 'No image file provided' });
+    return;
+  }
+
+  try {
+    const songs = await parseSetlistImage(req.file.buffer, req.file.mimetype);
+    res.json({ songs });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to parse setlist image';
+    res.status(422).json({ error: message });
+  }
+});
+
+// Score a game with a provided setlist (host only)
+router.post('/:id/score-setlist', async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const userId = req.user!.userId;
+  const { setlist } = req.body as { setlist?: string[] };
+
+  if (!Array.isArray(setlist) || setlist.length === 0 || !setlist.every((s) => typeof s === 'string')) {
+    res.status(400).json({ error: 'setlist must be a non-empty array of song name strings' });
+    return;
+  }
+
+  const game = await prisma.game.findUnique({
+    where: { id },
+    include: { players: true, picks: true },
+  });
+
+  if (!game) {
+    res.status(404).json({ error: 'Game not found' });
+    return;
+  }
+
+  if (game.hostUserId !== userId) {
+    res.status(403).json({ error: 'Only the host can score the game' });
+    return;
+  }
+
+  if (game.status !== 'LOCKED') {
+    res.status(400).json({ error: 'Game must be in LOCKED status to score' });
+    return;
+  }
+
+  // Normalize the setlist for matching
+  const normalizedSetlist = new Set(setlist.map((s) => s.trim().toLowerCase()));
+
+  // Also build a list for fuzzy matching
+  const setlistArray = setlist.map((s) => s.trim());
+
+  // Score each pick
+  for (const pick of game.picks) {
+    const exactMatch = normalizedSetlist.has(pick.songName.trim().toLowerCase());
+    const fuzzyMatch = !exactMatch ? fuzzyMatchSong(pick.songName, setlistArray) !== null : false;
+    const isCorrect = exactMatch || fuzzyMatch;
+
+    await prisma.pick.update({
+      where: { id: pick.id },
+      data: { scored: isCorrect },
+    });
+  }
+
+  // Update game status
+  await prisma.game.update({
+    where: { id },
+    data: { status: 'SCORED' },
+  });
+
+  res.json({ message: 'Game scored successfully', setlist: setlistArray });
 });
 
 export default router;

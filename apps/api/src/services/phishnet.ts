@@ -39,14 +39,12 @@ export async function syncSongsFromPhishNet(): Promise<number> {
   let upsertCount = 0;
   for (const song of json.data) {
     await prisma.song.upsert({
-      where: { phishNetId: song.songid },
+      where: { name: song.song },
       update: {
-        name: song.song,
         timesPlayed: song.times_played,
         lastPlayed: song.last_played,
       },
       create: {
-        phishNetId: song.songid,
         name: song.song,
         timesPlayed: song.times_played,
         lastPlayed: song.last_played,
