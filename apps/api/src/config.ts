@@ -10,4 +10,5 @@ export const config = {
   phishNetBaseUrl: 'https://api.phish.net/v5',
   corsOrigin: process.env.CORS_ORIGIN || '*',
   nodeEnv: process.env.NODE_ENV || 'development',
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
 } as const;

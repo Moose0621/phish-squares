@@ -103,6 +103,36 @@ class ApiClient {
       body: JSON.stringify({ password }),
     });
   }
+
+  async uploadSetlistImage(gameId: string, imageFile: File): Promise<{ songs: string[] }> {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    const headers: Record<string, string> = {};
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    const res = await fetch(`${API_URL}/api/games/${encodeURIComponent(gameId)}/setlist-image`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: 'Upload failed' }));
+      throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
+    }
+
+    return res.json() as Promise<{ songs: string[] }>;
+  }
+
+  async scoreGameWithSetlist(gameId: string, setlist: string[]) {
+    return this.request(`/api/games/${encodeURIComponent(gameId)}/score-setlist`, {
+      method: 'POST',
+      body: JSON.stringify({ setlist }),
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

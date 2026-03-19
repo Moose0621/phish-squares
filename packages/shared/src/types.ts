@@ -97,6 +97,8 @@ export interface ScoredPick extends Pick {
 
 export interface GameResult {
   gameId: string;
+  hostUserId: string;
+  status: GameStatus;
   showDate: string;
   showVenue: string;
   setlist: string[];
