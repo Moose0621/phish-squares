@@ -50,9 +50,9 @@ describe('syncSongsFromPhishNet', () => {
     );
     expect(mockPrisma.song.upsert).toHaveBeenCalledTimes(2);
     expect(mockPrisma.song.upsert).toHaveBeenCalledWith({
-      where: { phishNetId: 1 },
-      update: { name: 'Tweezer', timesPlayed: 300, lastPlayed: '2025-01-01' },
-      create: { phishNetId: 1, name: 'Tweezer', timesPlayed: 300, lastPlayed: '2025-01-01' },
+      where: { name: 'Tweezer' },
+      update: { timesPlayed: 300, lastPlayed: '2025-01-01' },
+      create: { name: 'Tweezer', timesPlayed: 300, lastPlayed: '2025-01-01' },
     });
   });
 

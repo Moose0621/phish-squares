@@ -6,6 +6,7 @@ CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "username" TEXT NOT NULL,
     "password_hash" TEXT NOT NULL,
+    "is_admin" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -60,10 +61,11 @@ CREATE TABLE "picks" (
 -- CreateTable
 CREATE TABLE "songs" (
     "id" TEXT NOT NULL,
-    "phish_net_id" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
+    "artist" TEXT NOT NULL DEFAULT '',
     "times_played" INTEGER NOT NULL DEFAULT 0,
     "last_played" TEXT,
+    "is_custom" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "songs_pkey" PRIMARY KEY ("id")
 );
@@ -99,7 +101,7 @@ CREATE INDEX "picks_game_id_round_idx" ON "picks"("game_id", "round");
 CREATE INDEX "picks_game_id_user_id_idx" ON "picks"("game_id", "user_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "songs_phish_net_id_key" ON "songs"("phish_net_id");
+CREATE UNIQUE INDEX "songs_name_key" ON "songs"("name");
 
 -- CreateIndex
 CREATE INDEX "songs_name_idx" ON "songs"("name");
