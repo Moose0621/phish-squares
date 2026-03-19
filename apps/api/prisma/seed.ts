@@ -26,7 +26,7 @@ async function main() {
   const mooseHash = await bcrypt.hash('moose', 12);
 
   for (const { username, isAdmin } of USERS) {
-    const hash = username === 'Moose' ? mooseHash : defaultHash;
+    const hash = username === 'moose' ? mooseHash : defaultHash;
     const user = await prisma.user.upsert({
       where: { username },
       update: { isAdmin: isAdmin ?? false },

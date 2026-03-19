@@ -1,8 +1,11 @@
 .container {
   flex: 1;
   background-color: var(--bg);
-  padding: 16px;
+  padding: 24px;
   min-height: 100vh;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .loadingText {
@@ -13,50 +16,57 @@
 
 .header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .venue {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 22px;
+  font-weight: 700;
   color: var(--text);
   margin: 0;
+  letter-spacing: -0.3px;
 }
 
 .date {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--muted);
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .codeCard {
   background-color: var(--card);
-  border-radius: 16px;
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-lg);
   padding: 24px;
   text-align: center;
-  margin-bottom: 24px;
-  border: 2px solid var(--primary);
+  margin-bottom: 28px;
+  border: 1px solid var(--primary);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 0 24px var(--primary-glow);
 }
 
 .codeCard:hover {
-  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 0 32px var(--primary-glow), var(--shadow-md);
 }
 
 .codeLabel {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--muted);
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
 }
 
 .codeValue {
   font-size: 36px;
-  font-weight: bold;
+  font-weight: 700;
   color: var(--primary);
-  letter-spacing: 4px;
-  margin: 8px 0;
-  font-family: monospace;
+  letter-spacing: 6px;
+  margin: 10px 0;
+  font-family: 'SF Mono', 'Fira Code', monospace;
 }
 
 .codeTap {
@@ -66,66 +76,82 @@
 }
 
 .sectionTitle {
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
   margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .playerList {
   list-style: none;
   padding: 0;
-  margin: 0 0 16px 0;
+  margin: 0 0 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .playerRow {
   display: flex;
   align-items: center;
   background-color: var(--card);
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 8px;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  transition: border-color 0.15s;
+}
+
+.playerRow:hover {
+  border-color: var(--border-hover);
 }
 
 .playerNumber {
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--primary);
-  width: 30px;
+  width: 28px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
 }
 
 .playerName {
-  font-size: 16px;
+  font-size: 15px;
   color: var(--text);
   flex: 1;
+  font-weight: 500;
 }
 
 .hostBadge {
   font-size: 10px;
   color: var(--highlight);
-  font-weight: bold;
-  background-color: var(--border);
-  padding: 3px 6px;
-  border-radius: 4px;
+  font-weight: 700;
+  background-color: rgba(251, 191, 36, 0.1);
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .startButton {
-  background-color: var(--primary);
-  border-radius: 12px;
-  padding: 18px;
+  background: linear-gradient(135deg, var(--primary), #d63384);
+  border-radius: var(--radius);
+  padding: 16px;
   text-align: center;
-  margin-top: 16px;
-  font-size: 20px;
-  font-weight: bold;
+  margin-top: 20px;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--text);
   cursor: pointer;
   border: none;
   width: 100%;
-  transition: opacity 0.2s;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: var(--shadow);
 }
 
 .startButton:hover:not(:disabled) {
-  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .startButton:disabled {
@@ -135,14 +161,15 @@
 
 .waitingBanner {
   background-color: var(--card);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 16px;
   text-align: center;
   margin-top: 16px;
+  border: 1px solid var(--border);
 }
 
 .waitingText {
   color: var(--muted);
-  font-size: 16px;
+  font-size: 15px;
   margin: 0;
 }

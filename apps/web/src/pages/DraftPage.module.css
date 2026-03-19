@@ -4,6 +4,9 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  max-width: var(--content-width);
+  margin: 0 auto;
+  width: 100%;
 }
 
 .loadingText {
@@ -14,35 +17,39 @@
 
 .turnBanner {
   background-color: var(--card);
-  padding: 16px;
+  backdrop-filter: blur(8px);
+  padding: 16px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid var(--border);
 }
 
 .myTurnBanner {
-  background-color: #2d3748;
-  border-bottom: 3px solid var(--primary);
+  background-color: rgba(233, 69, 96, 0.06);
+  border-bottom: 2px solid var(--primary);
 }
 
 .turnText {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--text);
   margin: 0;
 }
 
 .timerContainer {
-  background-color: var(--accent-dark);
-  border-radius: 20px;
+  background-color: var(--bg-subtle);
+  border-radius: 999px;
   padding: 6px 16px;
+  border: 1px solid var(--border);
 }
 
 .timer {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--text);
   margin: 0;
+  font-family: 'SF Mono', 'Fira Code', monospace;
 }
 
 .timerUrgent {
@@ -50,53 +57,61 @@
 }
 
 .roundInfo {
-  padding: 10px;
+  padding: 12px;
   text-align: center;
 }
 
 .roundText {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--muted);
-  font-weight: bold;
+  font-weight: 600;
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .searchContainer {
-  padding: 0 16px;
+  padding: 0 20px;
   margin-bottom: 8px;
   position: relative;
 }
 
 .searchInput {
-  background-color: var(--card);
-  border-radius: 12px;
-  padding: 14px;
-  font-size: 16px;
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 15px;
   color: var(--text);
   border: 2px solid var(--primary);
   width: 100%;
   outline: none;
+  transition: box-shadow 0.15s;
+}
+
+.searchInput:focus {
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .searchInput::placeholder {
-  color: #888;
+  color: #64748b;
 }
 
 .searchResults {
   position: absolute;
-  left: 16px;
-  right: 16px;
-  background-color: var(--card);
-  border-radius: 8px;
+  left: 20px;
+  right: 20px;
+  background-color: var(--card-solid);
+  border-radius: var(--radius);
   margin-top: 4px;
-  max-height: 200px;
+  max-height: 240px;
   overflow-y: auto;
   z-index: 100;
   border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
 }
 
 .songResult {
-  padding: 12px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
@@ -107,10 +122,11 @@
   border-top: none;
   width: 100%;
   text-align: left;
+  transition: background-color 0.1s;
 }
 
 .songResult:hover {
-  background-color: var(--accent-dark);
+  background-color: rgba(148, 163, 184, 0.06);
 }
 
 .songResult:last-child {
@@ -118,8 +134,9 @@
 }
 
 .songName {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--text);
+  font-weight: 500;
 }
 
 .songMeta {
@@ -128,13 +145,13 @@
 }
 
 .writeInContainer {
-  padding: 12px 16px;
+  padding: 12px 20px;
   background-color: var(--card);
   border-top: 1px solid var(--border);
 }
 
 .writeInHint {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
   margin: 0 0 8px;
 }
@@ -146,27 +163,29 @@
 }
 
 .writeInButton {
-  background-color: var(--primary);
+  background: linear-gradient(135deg, var(--primary), #d63384);
   border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: bold;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text);
   cursor: pointer;
   border: none;
-  transition: opacity 0.2s;
+  transition: transform 0.15s;
 }
 
 .writeInButton:hover {
-  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .sectionTitle {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text);
-  padding: 16px 16px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 16px 20px 8px;
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .picksList {
@@ -177,40 +196,46 @@
 .pickRow {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--card);
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.1s;
+}
+
+.pickRow:hover {
+  background-color: rgba(148, 163, 184, 0.03);
 }
 
 .pickRound {
-  background-color: var(--accent-dark);
-  border-radius: 12px;
-  padding: 3px 8px;
-  margin-right: 8px;
+  background-color: var(--bg-subtle);
+  border-radius: 6px;
+  padding: 2px 8px;
+  margin-right: 10px;
   flex-shrink: 0;
 }
 
 .pickRoundText {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
-  font-weight: bold;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
 }
 
 .pickPlayer {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--primary);
-  font-weight: bold;
+  font-weight: 600;
   width: 80px;
   flex-shrink: 0;
 }
 
 .pickSong {
-  font-size: 14px;
-  color: var(--text);
+  font-size: 13px;
+  color: var(--text-secondary);
   flex: 1;
 }
 
 .bonusBadge {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--highlight);
 }
 
@@ -218,4 +243,5 @@
   color: var(--muted);
   text-align: center;
   padding: 24px;
+  font-size: 14px;
 }

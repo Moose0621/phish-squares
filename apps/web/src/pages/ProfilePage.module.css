@@ -1,17 +1,21 @@
 .container {
   flex: 1;
   background-color: var(--bg);
-  padding: 24px;
+  padding: 32px 24px;
   min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .card {
   background-color: var(--card);
-  border-radius: 16px;
-  padding: 32px;
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-lg);
+  padding: 40px 32px;
   text-align: center;
   border: 1px solid var(--border);
-  margin-bottom: 0;
+  box-shadow: var(--shadow);
 }
 
 .avatar {
@@ -21,27 +25,29 @@
 }
 
 .username {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 22px;
+  font-weight: 700;
   color: var(--text);
   margin: 0;
+  letter-spacing: -0.3px;
 }
 
 .logoutButton {
-  background-color: var(--primary);
-  border-radius: 12px;
-  padding: 16px;
+  background: transparent;
+  border-radius: var(--radius);
+  padding: 14px;
   text-align: center;
   margin-top: 32px;
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary);
   cursor: pointer;
-  border: none;
+  border: 1px solid var(--primary);
   width: 100%;
-  transition: opacity 0.2s;
+  transition: background-color 0.15s, color 0.15s;
 }
 
 .logoutButton:hover {
-  opacity: 0.9;
+  background-color: var(--primary);
+  color: var(--text);
 }

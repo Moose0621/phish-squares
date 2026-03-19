@@ -1,7 +1,9 @@
 .nav {
-  background-color: var(--card);
+  background-color: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
-  padding: 0 16px;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -13,33 +15,35 @@
 
 .brand {
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 700;
   color: var(--text);
   text-decoration: none;
+  letter-spacing: -0.3px;
 }
 
 .navLinks {
   display: flex;
-  gap: 4px;
+  gap: 2px;
 }
 
 .navLink {
   color: var(--muted);
   text-decoration: none;
-  padding: 8px 12px;
+  padding: 8px 14px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  transition: color 0.2s, background-color 0.2s;
+  transition: color 0.15s, background-color 0.15s;
 }
 
 .navLink:hover {
   color: var(--text);
-  background-color: var(--accent-dark);
+  background-color: rgba(148, 163, 184, 0.08);
 }
 
 .navLinkActive {
   color: var(--primary);
+  background-color: var(--primary-glow);
 }
 
 .main {

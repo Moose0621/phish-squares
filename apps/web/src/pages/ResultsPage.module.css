@@ -2,7 +2,10 @@
   flex: 1;
   background-color: var(--bg);
   min-height: 100vh;
-  padding-bottom: 32px;
+  padding-bottom: 48px;
+  max-width: var(--content-wide);
+  margin: 0 auto;
+  width: 100%;
 }
 
 .loadingText {
@@ -13,50 +16,54 @@
 
 .header {
   text-align: center;
-  padding: 20px;
+  padding: 28px 24px 20px;
 }
 
 .venue {
   font-size: 22px;
-  font-weight: bold;
+  font-weight: 700;
   color: var(--text);
   margin: 0;
+  letter-spacing: -0.3px;
 }
 
 .date {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--muted);
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .sectionTitle {
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--text);
-  padding: 16px 16px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 16px 24px 8px;
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .setlistList {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 0 16px 16px;
+  padding: 0 24px 20px;
 }
 
 .setlistSong {
   background-color: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 4px 10px;
-  font-size: 13px;
-  color: var(--text);
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 /* ── Results Table ── */
 .tableWrapper {
   overflow-x: auto;
-  padding: 0 16px;
+  padding: 0 24px;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -65,6 +72,7 @@
   border-collapse: separate;
   border-spacing: 0;
   min-width: 500px;
+  font-size: 13px;
 }
 
 .table th,
@@ -77,24 +85,26 @@
 
 /* Header */
 .roundHeader {
-  background-color: var(--card);
+  background-color: var(--card-solid);
   color: var(--muted);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   text-align: center;
   min-width: 48px;
   white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .bonusHeader {
   color: var(--highlight);
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .playerHeader {
-  background-color: var(--card);
+  background-color: var(--card-solid);
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -107,13 +117,13 @@
 .playerName {
   display: block;
   font-size: 14px;
-  font-weight: bold;
+  font-weight: 600;
   color: var(--text);
 }
 
 /* Player row cells */
 .playerCell {
-  background-color: var(--card);
+  background-color: var(--card-solid);
   min-width: 120px;
   position: sticky;
   left: 0;
@@ -123,8 +133,8 @@
 
 /* Pick cells */
 .pickCell {
-  font-size: 13px;
-  color: var(--text);
+  font-size: 12px;
+  color: var(--text-secondary);
   background-color: var(--bg);
   position: relative;
   min-width: 120px;
@@ -143,33 +153,41 @@
 }
 
 .correctCell {
-  background-color: rgba(72, 187, 120, 0.12);
+  background-color: rgba(52, 211, 153, 0.08);
+  border-color: rgba(52, 211, 153, 0.15);
 }
 
 /* Footer totals */
 .totalCell {
-  background-color: var(--card);
-  font-size: 16px;
-  font-weight: bold;
+  background-color: var(--card-solid);
+  font-size: 15px;
+  font-weight: 700;
   color: var(--primary);
   text-align: center;
 }
 
 /* ── Setlist Upload ── */
 .uploadSection {
-  padding: 16px;
+  padding: 24px;
   text-align: center;
 }
 
 .uploadButton {
-  background-color: var(--primary);
+  background: linear-gradient(135deg, var(--primary), #d63384);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 12px 24px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: var(--shadow);
+}
+
+.uploadButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .uploadButton:disabled {
@@ -203,10 +221,10 @@
   gap: 4px;
   background-color: var(--card);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 14px;
-  color: var(--text);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 .removeSongBtn {
@@ -221,12 +239,18 @@
 
 .addSongBtn {
   background: none;
-  border: 1px dashed var(--border);
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-size: 14px;
+  border: 1px dashed var(--border-hover);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 13px;
   color: var(--muted);
   cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.addSongBtn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .scoreActions {
@@ -237,14 +261,21 @@
 }
 
 .confirmScoreBtn {
-  background-color: #48bb78;
+  background: linear-gradient(135deg, #34d399, #10b981);
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 15px;
+  border-radius: var(--radius);
+  padding: 10px 24px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: var(--shadow);
+}
+
+.confirmScoreBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .confirmScoreBtn:disabled {
@@ -255,9 +286,15 @@
 .cancelBtn {
   background-color: transparent;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 15px;
+  border-radius: var(--radius);
+  padding: 10px 24px;
+  font-size: 14px;
   color: var(--muted);
   cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.cancelBtn:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-secondary);
 }
