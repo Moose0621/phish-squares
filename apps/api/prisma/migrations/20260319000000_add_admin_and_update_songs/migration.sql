@@ -1,5 +1,5 @@
 -- AlterTable: Add is_admin column to users
-ALTER TABLE "users" ADD COLUMN "is_admin" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "is_admin" BOOLEAN NOT NULL DEFAULT false;
 
 -- AlterTable: Modify songs table to match current schema
 -- Drop old unique constraint on phish_net_id
