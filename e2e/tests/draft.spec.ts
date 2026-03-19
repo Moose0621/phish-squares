@@ -58,7 +58,7 @@ test.describe('Game Draft Flow', () => {
 
   test('should not allow non-host to start draft', async ({ request }) => {
     const host = await registerAndGetToken(request, 'host2');
-    const player = await registerAndGetToken(request, 'player2');
+    const player = await registerAndGetToken(request, 'plyr2');
 
     // Create game
     const createResponse = await request.post(`${API_URL}/api/games`, {
@@ -96,7 +96,7 @@ test.describe('Game Draft Flow', () => {
   });
 
   test('should not allow duplicate game joins', async ({ request }) => {
-    const host = await registerAndGetToken(request, 'duphost');
+    const host = await registerAndGetToken(request, 'duph');
 
     const createResponse = await request.post(`${API_URL}/api/games`, {
       headers: { Authorization: `Bearer ${host.token}` },
@@ -113,7 +113,7 @@ test.describe('Game Draft Flow', () => {
   });
 
   test('should list user games', async ({ request }) => {
-    const host = await registerAndGetToken(request, 'listhost');
+    const host = await registerAndGetToken(request, 'list');
 
     // Create a game
     await request.post(`${API_URL}/api/games`, {

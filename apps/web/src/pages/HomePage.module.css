@@ -1,0 +1,189 @@
+.container {
+  flex: 1;
+  background-color: var(--bg);
+  min-height: 100vh;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+}
+
+.actionButton {
+  flex: 1;
+  background-color: var(--primary);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text);
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s;
+}
+
+.actionButton:hover {
+  opacity: 0.9;
+}
+
+.joinButton {
+  background-color: var(--accent-dark);
+}
+
+.list {
+  padding: 0 16px 16px;
+}
+
+.gameCard {
+  background-color: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.gameCard:hover {
+  opacity: 0.85;
+}
+
+.gameHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gameVenue {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text);
+  flex: 1;
+}
+
+.gameStatus {
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.gameDate {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.gamePlayers {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.inviteCode {
+  font-size: 14px;
+  color: var(--primary);
+  margin-top: 4px;
+  font-family: monospace;
+}
+
+.emptyText {
+  color: var(--muted);
+  text-align: center;
+  margin-top: 48px;
+  font-size: 16px;
+  padding: 0 24px;
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.modalContent {
+  background-color: var(--card);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.modalTitle {
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--text);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.input {
+  background-color: var(--bg);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 16px;
+  color: var(--text);
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  outline: none;
+}
+
+.input::placeholder {
+  color: #888;
+}
+
+.input:focus {
+  border-color: var(--primary);
+}
+
+.modalButton {
+  background-color: var(--primary);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text);
+  cursor: pointer;
+  border: none;
+  width: 100%;
+}
+
+.modalButton:hover {
+  opacity: 0.9;
+}
+
+.cancelText {
+  color: var(--muted);
+  text-align: center;
+  margin-top: 16px;
+  font-size: 16px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  padding: 8px;
+}
+
+.cancelText:hover {
+  color: var(--text);
+}
+
+.error {
+  color: var(--primary);
+  font-size: 14px;
+  margin-bottom: 8px;
+  text-align: center;
+}

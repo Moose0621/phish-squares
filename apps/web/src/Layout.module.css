@@ -1,0 +1,49 @@
+.nav {
+  background-color: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.brand {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.navLinks {
+  display: flex;
+  gap: 4px;
+}
+
+.navLink {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.navLink:hover {
+  color: var(--text);
+  background-color: var(--accent-dark);
+}
+
+.navLinkActive {
+  color: var(--primary);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

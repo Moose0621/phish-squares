@@ -113,6 +113,17 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2023-05-01' = {
   }
 }
 
+// ── Azure Static Web App (Frontend) ──
+resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
+  name: '${baseName}-web'
+  location: location
+  sku: {
+    name: 'Free'
+    tier: 'Free'
+  }
+  properties: {}
+}
+
 // ── Container App (API) ──
 resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: '${baseName}-api'
@@ -167,6 +178,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
             { name: 'JWT_SECRET', secretRef: 'jwt-secret' }
             { name: 'PHISHNET_API_KEY', secretRef: 'phishnet-api-key' }
             { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsights.properties.ConnectionString }
+            { name: 'CORS_ORIGIN', value: 'https://${staticWebApp.properties.defaultHostname}' }
           ]
         }
       ]
@@ -191,5 +203,6 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
 // ── Outputs ──
 output acrLoginServer string = acr.properties.loginServer
 output apiUrl string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
+output webUrl string = 'https://${staticWebApp.properties.defaultHostname}'
 output dbHost string = postgres.properties.fullyQualifiedDomainName
 output appInsightsKey string = appInsights.properties.InstrumentationKey
