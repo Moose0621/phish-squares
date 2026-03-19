@@ -56,3 +56,4 @@ apps/api/prisma/migrations/**/migration_lock.toml
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.github/prompts/prompt-master.prompt.md
