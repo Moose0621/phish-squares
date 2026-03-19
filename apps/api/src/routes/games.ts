@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import {
   createGameSchema,
@@ -85,6 +85,23 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
   res.json(games);
 });
+
+// Multer and validation error handler for this router
+router.use(
+  (err: unknown, _req: Request, res: Response, next: NextFunction): void => {
+    if (err instanceof multer.MulterError) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+
+    if (err instanceof Error && err.message === 'Only image files are allowed') {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+
+    next(err);
+  }
+);
 
 // Get game details
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
@@ -377,7 +394,7 @@ router.get('/:id/results', async (req: Request, res: Response): Promise<void> =>
 });
 
 // Upload setlist image for OCR parsing (host only, game must be LOCKED)
-router.post('/:id/setlist-image', upload.single('image'), async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/setlist-image', authMiddleware, upload.single('image'), async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const userId = req.user!.userId;
 
@@ -416,7 +433,7 @@ router.post('/:id/setlist-image', upload.single('image'), async (req: Request, r
 });
 
 // Score a game with a provided setlist (host only)
-router.post('/:id/score-setlist', async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/score-setlist', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const userId = req.user!.userId;
   const { setlist } = req.body as { setlist?: string[] };
@@ -453,21 +470,41 @@ router.post('/:id/score-setlist', async (req: Request, res: Response): Promise<v
   const setlistArray = setlist.map((s) => s.trim());
 
   // Score each pick
+  const correctPickIds: string[] = [];
+  const incorrectPickIds: string[] = [];
+
   for (const pick of game.picks) {
     const exactMatch = normalizedSetlist.has(pick.songName.trim().toLowerCase());
     const fuzzyMatch = !exactMatch ? fuzzyMatchSong(pick.songName, setlistArray) !== null : false;
     const isCorrect = exactMatch || fuzzyMatch;
 
-    await prisma.pick.update({
-      where: { id: pick.id },
-      data: { scored: isCorrect },
-    });
+    if (isCorrect) {
+      correctPickIds.push(pick.id);
+    } else {
+      incorrectPickIds.push(pick.id);
+    }
   }
 
-  // Update game status
-  await prisma.game.update({
-    where: { id },
-    data: { status: 'SCORED' },
+  // Atomically update picks and game status
+  await prisma.$transaction(async (tx) => {
+    if (correctPickIds.length > 0) {
+      await tx.pick.updateMany({
+        where: { id: { in: correctPickIds } },
+        data: { scored: true },
+      });
+    }
+
+    if (incorrectPickIds.length > 0) {
+      await tx.pick.updateMany({
+        where: { id: { in: incorrectPickIds } },
+        data: { scored: false },
+      });
+    }
+
+    await tx.game.update({
+      where: { id },
+      data: { status: 'SCORED' },
+    });
   });
 
   res.json({ message: 'Game scored successfully', setlist: setlistArray });

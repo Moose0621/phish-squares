@@ -93,13 +93,13 @@ export function fuzzyMatchSong(
 }
 
 /** Levenshtein-based similarity ratio (0..1) */
-function similarity(a: string, b: string): number {
+export function similarity(a: string, b: string): number {
   const maxLen = Math.max(a.length, b.length);
   if (maxLen === 0) return 1;
   return 1 - levenshtein(a, b) / maxLen;
 }
 
-function levenshtein(a: string, b: string): number {
+export function levenshtein(a: string, b: string): number {
   const m = a.length;
   const n = b.length;
   const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0) as number[]);
