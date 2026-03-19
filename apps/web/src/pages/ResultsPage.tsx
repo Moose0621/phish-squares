@@ -154,7 +154,13 @@ export default function ResultsPage() {
             {parsedSongs.map((song, i) => (
               <span key={i} className={styles.parsedSong}>
                 {song}
-                <button className={styles.removeSongBtn} onClick={() => handleRemoveSong(i)}>×</button>
+                <button
+                  className={styles.removeSongBtn}
+                  onClick={() => handleRemoveSong(i)}
+                  aria-label={`Remove ${song} from parsed setlist`}
+                >
+                  ×
+                </button>
               </span>
             ))}
             <button className={styles.addSongBtn} onClick={handleAddSong}>+ Add Song</button>
