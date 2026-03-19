@@ -23,7 +23,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      PORT: "3000"
+      PORT: 3000
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/phishsquares
       JWT_SECRET: ${JWT_SECRET:-dev-secret-local-only}
       NODE_ENV: ${NODE_ENV:-development}
