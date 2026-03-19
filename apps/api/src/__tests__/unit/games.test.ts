@@ -502,7 +502,7 @@ describe('GET /api/games/:id/results', () => {
   it('should return 400 if game is not scored', async () => {
     (mockPrisma.game.findUnique as jest.Mock).mockResolvedValue({
       id: 'game-1',
-      status: 'LOCKED',
+      status: 'DRAFTING',
       players: [{ userId: 'user-1' }],
       picks: [],
     });
