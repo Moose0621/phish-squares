@@ -21,6 +21,16 @@ jest.mock('../../services/phishnet', () => ({
   fetchSetlistByDate: jest.fn(),
 }));
 
+// Mock stats service
+jest.mock('../../services/stats', () => ({
+  recomputeUserStats: jest.fn().mockResolvedValue(undefined),
+}));
+
+// Mock runs route
+jest.mock('../../routes/runs', () => ({
+  updateRunStatus: jest.fn().mockResolvedValue(undefined),
+}));
+
 const mockPrisma = prisma as jest.Mocked<typeof prisma>;
 const mockFetchSetlist = phishnet.fetchSetlistByDate as jest.MockedFunction<typeof phishnet.fetchSetlistByDate>;
 

@@ -41,6 +41,16 @@ jest.mock('../../services/phishnet', () => ({
   fetchSetlistByDate: jest.fn(),
 }));
 
+// Mock stats service
+jest.mock('../../services/stats', () => ({
+  recomputeUserStats: jest.fn().mockResolvedValue(undefined),
+}));
+
+// Mock runs route
+jest.mock('../../routes/runs', () => ({
+  updateRunStatus: jest.fn().mockResolvedValue(undefined),
+}));
+
 import { scoreGame } from '../../services/scoring';
 import { fetchSetlistByDate } from '../../services/phishnet';
 
