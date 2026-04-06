@@ -1,10 +1,19 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../db';
 import { authMiddleware } from '../middleware/auth';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
 
+const leaderboardLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
 router.use(authMiddleware);
+router.use(leaderboardLimiter);
 
 // Global leaderboard
 router.get('/', async (req: Request, res: Response): Promise<void> => {

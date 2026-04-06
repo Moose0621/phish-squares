@@ -1,13 +1,21 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../db';
 import { authMiddleware } from '../middleware/auth';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
+
+const statsRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 router.use(authMiddleware);
 
 // Get authenticated user's stats
-router.get('/me/stats', async (req: Request, res: Response): Promise<void> => {
+router.get('/me/stats', statsRateLimiter, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
 
   const stats = await prisma.userStats.findUnique({
@@ -39,7 +47,7 @@ router.get('/me/stats', async (req: Request, res: Response): Promise<void> => {
 });
 
 // Get any user's public stats
-router.get('/:id/stats', async (req: Request, res: Response): Promise<void> => {
+router.get('/:id/stats', statsRateLimiter, async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
 
   const user = await prisma.user.findUnique({ where: { id } });

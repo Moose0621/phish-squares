@@ -8,11 +8,21 @@ import { generateInviteCode, calculatePickScore } from '@phish-squares/shared';
 import { prisma } from '../db';
 import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
 
+// Rate limit all run routes to mitigate abuse and DoS
+const runRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs for these routes
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // All run routes require authentication
 router.use(authMiddleware);
+router.use(runRateLimiter);
 
 /**
  * Helper: generate dates between startDate and endDate (inclusive).
