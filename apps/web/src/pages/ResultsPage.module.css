@@ -298,3 +298,27 @@
   border-color: var(--text-secondary);
   color: var(--text-secondary);
 }
+
+.backToRun {
+  display: inline-block;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 16px 24px 0;
+  transition: color 0.15s;
+}
+
+.backToRun:hover {
+  color: var(--text);
+}
+
+.statsToast {
+  background: linear-gradient(135deg, #34d399, #10b981);
+  color: white;
+  text-align: center;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--radius);
+  margin: 16px 24px 0;
+}

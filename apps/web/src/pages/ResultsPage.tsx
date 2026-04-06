@@ -1,15 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { apiClient } from '../api-client';
 import { useAuth } from '../auth-context';
 import type { GameResult, PlayerResult } from '@phish-squares/shared';
 import styles from './ResultsPage.module.css';
 
+interface GameDetail {
+  runId?: string | null;
+}
+
 export default function ResultsPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const [game, setGame] = useState<GameResult | null>(null);
+  const [gameDetail, setGameDetail] = useState<GameDetail | null>(null);
   const [error, setError] = useState('');
+  const [statsToast, setStatsToast] = useState<string | null>(null);
 
   // Setlist upload state
   const [parsedSongs, setParsedSongs] = useState<string[] | null>(null);
@@ -24,6 +30,13 @@ export default function ResultsPage() {
       try {
         const data = (await apiClient.getGameResults(id)) as GameResult;
         setGame(data);
+        // Also load full game detail to get runId
+        try {
+          const detail = (await apiClient.getGame(id)) as GameDetail;
+          setGameDetail(detail);
+        } catch {
+          // Not critical
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load results');
       }
@@ -79,6 +92,14 @@ export default function ResultsPage() {
       const data = (await apiClient.getGameResults(id)) as GameResult;
       setGame(data);
       setParsedSongs(null);
+      // Show stats updated toast
+      try {
+        const stats = await apiClient.getMyStats() as { totalPoints: number };
+        setStatsToast(`Stats updated! You have ${stats.totalPoints} total points.`);
+        setTimeout(() => setStatsToast(null), 5000);
+      } catch {
+        // Not critical
+      }
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Failed to score game');
     } finally {
@@ -119,6 +140,16 @@ export default function ResultsPage() {
 
   return (
     <div className={styles.container}>
+      {gameDetail?.runId && (
+        <Link to={`/run/${gameDetail.runId}`} className={styles.backToRun}>
+          ← Back to Run
+        </Link>
+      )}
+
+      {statsToast && (
+        <div className={styles.statsToast}>{statsToast}</div>
+      )}
+
       <div className={styles.header}>
         <h1 className={styles.venue}>{game.showVenue}</h1>
         <p className={styles.date}>{game.showDate}</p>

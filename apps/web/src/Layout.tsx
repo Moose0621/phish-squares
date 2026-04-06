@@ -40,6 +40,14 @@ export function AppLayout() {
           >
             Games
           </NavLink>
+          <NavLink
+            to="/leaderboard"
+            className={({ isActive }: { isActive: boolean }) =>
+              `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
+            }
+          >
+            Leaderboard
+          </NavLink>
           {user?.isAdmin && (
             <NavLink
               to="/admin"

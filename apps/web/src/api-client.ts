@@ -133,6 +133,47 @@ class ApiClient {
       body: JSON.stringify({ setlist }),
     });
   }
+
+  // Run endpoints
+  async getRuns() {
+    return this.request('/api/runs');
+  }
+
+  async getRun(id: string) {
+    return this.request(`/api/runs/${encodeURIComponent(id)}`);
+  }
+
+  async createRun(data: { name: string; venue: string; startDate: string; endDate: string }) {
+    return this.request('/api/runs', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async joinRun(inviteCode: string) {
+    return this.request('/api/runs/join', {
+      method: 'POST',
+      body: JSON.stringify({ inviteCode }),
+    });
+  }
+
+  async getRunStandings(id: string) {
+    return this.request(`/api/runs/${encodeURIComponent(id)}/standings`);
+  }
+
+  // Stats endpoints
+  async getMyStats() {
+    return this.request('/api/users/me/stats');
+  }
+
+  async getUserStats(id: string) {
+    return this.request(`/api/users/${encodeURIComponent(id)}/stats`);
+  }
+
+  // Leaderboard
+  async getLeaderboard(sort: string = 'points') {
+    return this.request(`/api/leaderboard?sort=${encodeURIComponent(sort)}`);
+  }
 }
 
 export const apiClient = new ApiClient();
