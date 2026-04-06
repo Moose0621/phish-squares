@@ -13,6 +13,8 @@ import { prisma } from '../db';
 import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { scoreGame } from '../services/scoring';
+import { recomputeUserStats } from '../services/stats';
+import { updateRunStatus } from './runs';
 import { fetchSetlistByDate } from '../services/phishnet';
 import { parseSetlistImage, fuzzyMatchSong } from '../services/setlist-parser';
 
@@ -506,6 +508,24 @@ router.post('/:id/score-setlist', authMiddleware, async (req: Request, res: Resp
       data: { status: 'SCORED' },
     });
   });
+
+  // Recompute stats for all players in this game
+  for (const player of game.players) {
+    try {
+      await recomputeUserStats(player.userId);
+    } catch {
+      // Stats recomputation failure should not break scoring
+    }
+  }
+
+  // Update run status if this game belongs to a run
+  if (game.runId) {
+    try {
+      await updateRunStatus(game.runId);
+    } catch {
+      // Run status update failure should not break scoring
+    }
+  }
 
   res.json({ message: 'Game scored successfully', setlist: setlistArray });
 });

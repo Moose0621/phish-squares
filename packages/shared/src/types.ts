@@ -6,6 +6,13 @@ export enum GameStatus {
   SCORED = 'SCORED',
 }
 
+// ── Run Status ──
+export enum RunStatus {
+  UPCOMING = 'UPCOMING',
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+}
+
 // ── User ──
 export interface User {
   id: string;
@@ -33,6 +40,7 @@ export interface Game {
   currentPickIndex: number;
   totalRounds: number;
   maxPlayers: number;
+  runId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -142,6 +150,87 @@ export interface JoinGameRequest {
 
 export interface MakePickRequest {
   songName: string;
+}
+
+// ── Run ──
+export interface Run {
+  id: string;
+  name: string;
+  venue: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  hostUserId: string;
+  inviteCode: string;
+  status: RunStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RunPlayer {
+  id: string;
+  runId: string;
+  userId: string;
+  user?: UserPublic;
+  joinedAt: Date;
+}
+
+export interface RunStandings {
+  run: Run;
+  standings: Array<{
+    userId: string;
+    username: string;
+    gameScores: Array<{
+      gameId: string;
+      showDate: string;
+      points: number;
+    }>;
+    totalPoints: number;
+    rank: number;
+  }>;
+}
+
+// ── User Stats ──
+export interface UserStats {
+  id: string;
+  userId: string;
+  gamesPlayed: number;
+  gamesWon: number;
+  totalPicks: number;
+  correctPicks: number;
+  totalPoints: number;
+  bonusPicks: number;
+  bonusCorrect: number;
+  bestGamePoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  runsParticipated: number;
+  runsWon: number;
+  lastPlayedAt: Date | null;
+  updatedAt: Date;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  username: string;
+  gamesPlayed: number;
+  gamesWon: number;
+  winRate: number;
+  accuracy: number;
+  totalPoints: number;
+  currentStreak: number;
+}
+
+// ── Create Run Request ──
+export interface CreateRunRequest {
+  name: string;
+  venue: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface JoinRunRequest {
+  inviteCode: string;
 }
 
 // ── Socket Events ──

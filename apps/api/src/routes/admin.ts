@@ -4,6 +4,7 @@ import { registerSchema } from '@phish-squares/shared';
 import { prisma } from '../db';
 import { authMiddleware, adminMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
+import { recomputeAllStats } from '../services/stats';
 
 const router = Router();
 
@@ -76,6 +77,17 @@ router.patch('/users/:id/password', async (req: Request, res: Response): Promise
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   await prisma.user.update({ where: { id }, data: { passwordHash } });
   res.json({ message: 'Password updated' });
+});
+
+// Recompute all user stats from scratch
+router.post('/stats/recompute', async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const count = await recomputeAllStats();
+    res.json({ message: `Stats recomputed for ${count} users` });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to recompute stats';
+    res.status(500).json({ error: message });
+  }
 });
 
 export default router;
