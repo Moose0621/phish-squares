@@ -317,10 +317,10 @@ router.get('/:id/standings', async (req: Request, res: Response): Promise<void> 
   res.json({
     run: {
       id: run.id,
-      name: (run as Record<string, unknown>).name,
-      venue: (run as Record<string, unknown>).venue,
-      startDate: (run as Record<string, unknown>).startDate,
-      endDate: (run as Record<string, unknown>).endDate,
+      name: run.name,
+      venue: run.venue,
+      startDate: run.startDate,
+      endDate: run.endDate,
       hostUserId: run.hostUserId,
       inviteCode: run.inviteCode,
       status: run.status,

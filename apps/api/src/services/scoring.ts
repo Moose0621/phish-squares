@@ -1,6 +1,7 @@
 import { prisma } from '../db';
 import { fetchSetlistByDate } from './phishnet';
 import { recomputeUserStats } from './stats';
+import { updateRunStatus } from '../routes/runs';
 
 /**
  * Score a game by comparing picks to the actual setlist from Phish.net.
@@ -61,7 +62,6 @@ export async function scoreGame(gameId: string): Promise<void> {
 
   // Update run status if this game belongs to a run
   if (game.runId) {
-    const { updateRunStatus } = await import('../routes/runs');
     try {
       await updateRunStatus(game.runId);
     } catch {
