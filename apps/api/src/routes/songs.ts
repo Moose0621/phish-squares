@@ -7,11 +7,12 @@ const router = Router();
 // Search songs (with autocomplete)
 // Optional: pass ?gameId=xxx to exclude songs already picked in that game
 router.get('/search', async (req: Request, res: Response): Promise<void> => {
-  const query = req.query.q as string;
-  if (!query || query.length < 2) {
+  const rawQuery = req.query.q;
+  if (typeof rawQuery !== 'string' || rawQuery.length < 2) {
     res.json([]);
     return;
   }
+  const query = rawQuery;
 
   // If gameId provided, get picked song names to exclude
   let excludeNames: string[] = [];
