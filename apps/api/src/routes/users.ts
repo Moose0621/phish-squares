@@ -5,6 +5,13 @@ import rateLimit from 'express-rate-limit';
 
 const router = Router();
 
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // limit each IP to 200 authenticated requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const statsRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per window
@@ -12,7 +19,7 @@ const statsRateLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-router.use(authMiddleware);
+router.use(authRateLimiter, authMiddleware);
 
 // Get authenticated user's stats
 router.get('/me/stats', statsRateLimiter, async (req: Request, res: Response): Promise<void> => {
