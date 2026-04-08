@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import {
   createRunSchema,
   joinRunSchema,
+  updateRunSchema,
   BONUS_ROUND_MULTIPLIER,
 } from '@phish-squares/shared';
 import { generateInviteCode, calculatePickScore } from '@phish-squares/shared';
@@ -256,6 +257,202 @@ router.post('/join', validate(joinRunSchema), async (req: Request, res: Response
   });
 
   res.json(updatedRun);
+});
+
+// Update a run (host only, name/venue)
+router.patch('/:id', validate(updateRunSchema), async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const userId = req.user!.userId;
+
+  const run = await prisma.run.findUnique({ where: { id } });
+  if (!run) {
+    res.status(404).json({ error: 'Run not found' });
+    return;
+  }
+  if (run.hostUserId !== userId) {
+    res.status(403).json({ error: 'Only the host can edit this run' });
+    return;
+  }
+
+  const { name, venue } = req.body;
+  const data: Record<string, string> = {};
+  if (name) data.name = name;
+  if (venue) {
+    data.venue = venue;
+    // Also update venue on all LOBBY games in the run
+    await prisma.game.updateMany({
+      where: { runId: id, status: 'LOBBY' },
+      data: { showVenue: venue },
+    });
+  }
+
+  await prisma.run.update({ where: { id }, data });
+
+  const updated = await prisma.run.findUnique({
+    where: { id },
+    include: {
+      players: { include: { user: { select: { id: true, username: true } } } },
+      games: {
+        include: { players: { include: { user: { select: { id: true, username: true } } } } },
+        orderBy: { showDate: 'asc' },
+      },
+      host: { select: { id: true, username: true } },
+    },
+  });
+
+  res.json(updated);
+});
+
+// Delete a game from a run (host only, game must be in LOBBY status)
+router.delete('/:id/games/:gameId', async (req: Request, res: Response): Promise<void> => {
+  const { id, gameId } = req.params;
+  const userId = req.user!.userId;
+
+  const run = await prisma.run.findUnique({
+    where: { id },
+    include: { games: true },
+  });
+
+  if (!run) {
+    res.status(404).json({ error: 'Run not found' });
+    return;
+  }
+  if (run.hostUserId !== userId) {
+    res.status(403).json({ error: 'Only the host can edit this run' });
+    return;
+  }
+
+  const game = run.games.find((g) => g.id === gameId);
+  if (!game) {
+    res.status(404).json({ error: 'Game not found in this run' });
+    return;
+  }
+  if (game.status !== 'LOBBY') {
+    res.status(400).json({ error: 'Can only remove games that are still in LOBBY status' });
+    return;
+  }
+  if (run.games.length <= 1) {
+    res.status(400).json({ error: 'Cannot remove the last game from a run' });
+    return;
+  }
+
+  // Cascade delete handles GamePlayer records
+  await prisma.game.delete({ where: { id: gameId } });
+
+  const updated = await prisma.run.findUnique({
+    where: { id },
+    include: {
+      players: { include: { user: { select: { id: true, username: true } } } },
+      games: {
+        include: { players: { include: { user: { select: { id: true, username: true } } } } },
+        orderBy: { showDate: 'asc' },
+      },
+      host: { select: { id: true, username: true } },
+    },
+  });
+
+  // Update run date range to match remaining games
+  if (updated && updated.games.length > 0) {
+    const sortedDates = updated.games.map((g) => g.showDate).sort((a, b) => a.getTime() - b.getTime());
+    await prisma.run.update({
+      where: { id },
+      data: {
+        startDate: sortedDates[0],
+        endDate: sortedDates[sortedDates.length - 1],
+      },
+    });
+  }
+
+  res.json(updated);
+});
+
+// Add a game (new show date) to a run (host only)
+router.post('/:id/games', async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const userId = req.user!.userId;
+  const { showDate } = req.body;
+
+  if (!showDate || !/^\d{4}-\d{2}-\d{2}$/.test(showDate)) {
+    res.status(400).json({ error: 'showDate is required in YYYY-MM-DD format' });
+    return;
+  }
+
+  const run = await prisma.run.findUnique({
+    where: { id },
+    include: { players: true, games: true },
+  });
+
+  if (!run) {
+    res.status(404).json({ error: 'Run not found' });
+    return;
+  }
+  if (run.hostUserId !== userId) {
+    res.status(403).json({ error: 'Only the host can edit this run' });
+    return;
+  }
+
+  // Check for duplicate date
+  const dateStr = showDate;
+  const existing = run.games.find(
+    (g) => g.showDate.toISOString().split('T')[0] === dateStr
+  );
+  if (existing) {
+    res.status(400).json({ error: 'A game already exists for that date' });
+    return;
+  }
+
+  // Generate invite code for the new game
+  let gameInviteCode: string;
+  let codeExists = true;
+  do {
+    gameInviteCode = generateInviteCode();
+    const existingRun = await prisma.run.findUnique({ where: { inviteCode: gameInviteCode } });
+    const existingGame = await prisma.game.findUnique({ where: { inviteCode: gameInviteCode } });
+    codeExists = !!(existingRun || existingGame);
+  } while (codeExists);
+
+  // Create the game and add all current run players
+  await prisma.game.create({
+    data: {
+      hostUserId: userId,
+      showDate: new Date(dateStr),
+      showVenue: run.venue,
+      inviteCode: gameInviteCode,
+      runId: run.id,
+      players: {
+        create: run.players.map((rp, i) => ({
+          userId: rp.userId,
+          draftPosition: i,
+        })),
+      },
+    },
+  });
+
+  // Update run date range
+  const allDates = [...run.games.map((g) => g.showDate), new Date(dateStr)].sort(
+    (a, b) => a.getTime() - b.getTime()
+  );
+  await prisma.run.update({
+    where: { id },
+    data: {
+      startDate: allDates[0],
+      endDate: allDates[allDates.length - 1],
+    },
+  });
+
+  const updated = await prisma.run.findUnique({
+    where: { id },
+    include: {
+      players: { include: { user: { select: { id: true, username: true } } } },
+      games: {
+        include: { players: { include: { user: { select: { id: true, username: true } } } } },
+        orderBy: { showDate: 'asc' },
+      },
+      host: { select: { id: true, username: true } },
+    },
+  });
+
+  res.status(201).json(updated);
 });
 
 // Get cumulative standings for a run

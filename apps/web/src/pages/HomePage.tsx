@@ -309,8 +309,8 @@ export default function HomePage() {
             <form onSubmit={handleCreateGame}>
               <input
                 className={styles.input}
-                type="text"
-                placeholder="Show Date (YYYY-MM-DD)"
+                type="date"
+                placeholder="Show Date"
                 value={showDate}
                 onChange={(e) => setShowDate(e.target.value)}
               />
@@ -382,15 +382,15 @@ export default function HomePage() {
               />
               <input
                 className={styles.input}
-                type="text"
-                placeholder="Start Date (YYYY-MM-DD)"
+                type="date"
+                placeholder="Start Date"
                 value={runStartDate}
                 onChange={(e) => setRunStartDate(e.target.value)}
               />
               <input
                 className={styles.input}
-                type="text"
-                placeholder="End Date (YYYY-MM-DD)"
+                type="date"
+                placeholder="End Date"
                 value={runEndDate}
                 onChange={(e) => setRunEndDate(e.target.value)}
               />

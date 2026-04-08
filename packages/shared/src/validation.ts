@@ -76,6 +76,19 @@ export const createRunSchema = z.object({
   { message: 'End date must be on or after start date', path: ['endDate'] },
 );
 
+export const updateRunSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Run name is required')
+    .max(100, 'Run name must be at most 100 characters')
+    .optional(),
+  venue: z
+    .string()
+    .min(1, 'Venue is required')
+    .max(200, 'Venue must be at most 200 characters')
+    .optional(),
+});
+
 export const joinRunSchema = z.object({
   inviteCode: z
     .string()

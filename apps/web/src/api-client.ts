@@ -161,6 +161,26 @@ class ApiClient {
     return this.request(`/api/runs/${encodeURIComponent(id)}/standings`);
   }
 
+  async updateRun(id: string, data: { name?: string; venue?: string }) {
+    return this.request(`/api/runs/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteRunGame(runId: string, gameId: string) {
+    return this.request(`/api/runs/${encodeURIComponent(runId)}/games/${encodeURIComponent(gameId)}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async addRunGame(runId: string, showDate: string) {
+    return this.request(`/api/runs/${encodeURIComponent(runId)}/games`, {
+      method: 'POST',
+      body: JSON.stringify({ showDate }),
+    });
+  }
+
   // Stats endpoints
   async getMyStats() {
     return this.request('/api/users/me/stats');

@@ -56,6 +56,13 @@ export default function RunPage() {
   const [standings, setStandings] = useState<Standing[]>([]);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editVenue, setEditVenue] = useState('');
+  const [editError, setEditError] = useState('');
+  const [addDate, setAddDate] = useState('');
+  const [addError, setAddError] = useState('');
+  const [managingGames, setManagingGames] = useState(false);
 
   const loadRun = useCallback(async () => {
     if (!id) return;
@@ -88,6 +95,51 @@ export default function RunPage() {
     await navigator.clipboard.writeText(run.inviteCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const openEditModal = () => {
+    if (!run) return;
+    setEditName(run.name);
+    setEditVenue(run.venue);
+    setEditError('');
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!run || !id) return;
+    setEditError('');
+    try {
+      const updated = await apiClient.updateRun(id, {
+        name: editName.trim(),
+        venue: editVenue.trim(),
+      }) as RunDetail;
+      setRun(updated);
+      setEditing(false);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Failed to update run');
+    }
+  };
+
+  const handleRemoveGame = async (gameId: string) => {
+    if (!run || !id) return;
+    try {
+      const updated = await apiClient.deleteRunGame(id, gameId) as RunDetail;
+      setRun(updated);
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Failed to remove game');
+    }
+  };
+
+  const handleAddGame = async () => {
+    if (!run || !id || !addDate) return;
+    setAddError('');
+    try {
+      const updated = await apiClient.addRunGame(id, addDate) as RunDetail;
+      setRun(updated);
+      setAddDate('');
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Failed to add game');
+    }
   };
 
   const navigateToGame = (game: RunGame) => {
@@ -138,6 +190,17 @@ export default function RunPage() {
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
+        {isHost && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
+            <button className={styles.editBtn} onClick={openEditModal}>Edit Details</button>
+            <button
+              className={styles.editBtn}
+              onClick={() => setManagingGames(!managingGames)}
+            >
+              {managingGames ? 'Done Managing' : 'Manage Games'}
+            </button>
+          </div>
+        )}
       </div>
 
       <h2 className={styles.sectionTitle}>Games ({run.games.length} nights)</h2>
@@ -146,18 +209,46 @@ export default function RunPage() {
           <div
             key={game.id}
             className={styles.gameCard}
-            onClick={() => navigateToGame(game)}
+            style={{ cursor: managingGames ? 'default' : 'pointer' }}
+            onClick={() => !managingGames && navigateToGame(game)}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && navigateToGame(game)}
+            onKeyDown={(e) => e.key === 'Enter' && !managingGames && navigateToGame(game)}
           >
             <span className={styles.gameDate}>{game.showDate.split('T')[0]}</span>
-            <span className={styles.gameStatus} style={{ color: getStatusColor(game.status) }}>
-              {game.status}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className={styles.gameStatus} style={{ color: getStatusColor(game.status) }}>
+                {game.status}
+              </span>
+              {managingGames && isHost && game.status === 'LOBBY' && run.games.length > 1 && (
+                <button
+                  className={styles.removeGameBtn}
+                  onClick={(e) => { e.stopPropagation(); void handleRemoveGame(game.id); }}
+                  title="Remove this game"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
+      {managingGames && isHost && (
+        <>
+          {addError && <p className={styles.error}>{addError}</p>}
+          <div className={styles.addGameRow}>
+            <input
+              className={styles.addGameInput}
+              type="date"
+              value={addDate}
+              onChange={(e) => setAddDate(e.target.value)}
+            />
+            <button className={styles.addGameBtn} onClick={() => void handleAddGame()}>
+              + Add Show Date
+            </button>
+          </div>
+        </>
+      )}
 
       {(standings.length > 0 || scoredGames.length > 0) && (
         <>
@@ -202,6 +293,32 @@ export default function RunPage() {
         <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 24, textAlign: 'center' }}>
           You are the host of this run.
         </p>
+      )}
+
+      {/* Edit Run Modal */}
+      {editing && (
+        <div className={styles.editOverlay} onClick={() => setEditing(false)}>
+          <div className={styles.editModal} onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Run</h2>
+            {editError && <p className={styles.error}>{editError}</p>}
+            <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Name</label>
+            <input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Run Name"
+            />
+            <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Venue</label>
+            <input
+              value={editVenue}
+              onChange={(e) => setEditVenue(e.target.value)}
+              placeholder="Venue"
+            />
+            <div className={styles.editModalActions}>
+              <button className={styles.cancelBtn} onClick={() => setEditing(false)}>Cancel</button>
+              <button className={styles.saveBtn} onClick={() => void handleSaveEdit()}>Save</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
