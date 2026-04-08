@@ -8,6 +8,8 @@ import DraftPage from './pages/DraftPage';
 import ResultsPage from './pages/ResultsPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import RunPage from './pages/RunPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 export default function App() {
   return (
@@ -22,6 +24,8 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/run/:id" element={<RunPage />} />
           <Route path="/game/:id/lobby" element={<LobbyPage />} />
           <Route path="/game/:id/draft" element={<DraftPage />} />
           <Route path="/game/:id/results" element={<ResultsPage />} />

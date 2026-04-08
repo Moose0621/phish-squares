@@ -1,9 +1,12 @@
 import { prisma } from '../db';
 import { fetchSetlistByDate } from './phishnet';
+import { recomputeUserStats } from './stats';
+import { updateRunStatus } from '../routes/runs';
 
 /**
  * Score a game by comparing picks to the actual setlist from Phish.net.
  * Updates all picks with scored status and transitions game to SCORED.
+ * After scoring, recomputes stats for all players and updates run status if applicable.
  */
 export async function scoreGame(gameId: string): Promise<void> {
   const game = await prisma.game.findUnique({
@@ -47,6 +50,24 @@ export async function scoreGame(gameId: string): Promise<void> {
     where: { id: gameId },
     data: { status: 'SCORED' },
   });
+
+  // Recompute stats for all players in this game
+  for (const player of game.players) {
+    try {
+      await recomputeUserStats(player.userId);
+    } catch {
+      // Stats recomputation failure should not break scoring
+    }
+  }
+
+  // Update run status if this game belongs to a run
+  if (game.runId) {
+    try {
+      await updateRunStatus(game.runId);
+    } catch {
+      // Run status update failure should not break scoring
+    }
+  }
 }
 
 /**
